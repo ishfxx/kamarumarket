@@ -283,10 +283,27 @@ const allMenuGroups = [
       },
     ],
   },
+  // {
+  //       icon: PieChartIcon,
+  //       name: "Administrasi",
+  //       roles: ['admin'],
+  //       subItems: [
+  //         { name: "Manajemen Pengguna", path: "/verifikasi", roles: ['admin'] },
+  //         { name: "Arus Kas", path: "/review", roles: ['admin'] },
+  //       ],
+  //     },
   {
     title: "Administrasi",
     items: [
-      { icon: UserCircleIcon, name: "Manajemen Pengguna", path: "/verifikasi", roles: ['admin'] },
+      {
+        icon: DocsIcon,
+        name: "Manajemen",
+        roles: ['admin'],
+        subItems: [
+          { name: "Manajemen Pengguna", path: "/verifikasi", roles: ['admin'] },
+          { name: "Manajemen Produk", path: "/review", roles: ['admin'] },
+        ],
+      },
     ]
   },
   {

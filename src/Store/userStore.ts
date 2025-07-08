@@ -8,8 +8,11 @@ export const useUserStore = defineStore('user', {
     profile: null as any | null, // Data profil tambahan dari tabel 'users' Anda
     loading: false,
     error: null as string | null,
-    allUsers: [] as any[], // State baru untuk menyimpan daftar semua user (untuk admin)
+    allUsers: [] as any[], // State untuk menyimpan daftar semua user (untuk admin)
     userRoles: ['user', 'umkm', 'admin'] as string[], // Daftar role yang valid
+
+    // NEW STATE: Untuk melacak waktu aktivitas sesi (untuk session timeout)
+    lastActivityTime: null as number | null,
   }),
   actions: {
     // --- Register Action ---
@@ -71,6 +74,8 @@ export const useUserStore = defineStore('user', {
           this.profile = profileData ? profileData[0] : null;
           localStorage.setItem('userProfile', JSON.stringify(this.profile));
           localStorage.setItem('userEmail', emailInput.trim());
+          this.lastActivityTime = Date.now(); // Set activity time on successful registration
+          localStorage.setItem('lastActivityTime', String(this.lastActivityTime));
 
           console.log('UserStore: Profile saved successfully:', this.profile);
           return true;
@@ -90,163 +95,117 @@ export const useUserStore = defineStore('user', {
     },
 
     // --- Login Action ---
-    async login(usernameOrEmailInput: string, passwordInput: string) { // Diubah dari emailInput
+    async login(usernameOrEmailInput: string, passwordInput: string) {
       this.loading = true;
       this.error = null;
       console.log('UserStore: Attempting to log in with username/email:', usernameOrEmailInput);
 
       try {
         let emailToAuthenticate: string | null = null;
-
         if (usernameOrEmailInput.includes('@')) {
           emailToAuthenticate = usernameOrEmailInput.trim();
         } else {
-          // --- SECURITY CONSIDERATION ---
-          // This client-side lookup exposes the existence of usernames and emails
-          // if your RLS policy for 'public.users' allows it.
-          // For production, consider using a Supabase Edge Function with a service_role key
-          // to perform this lookup securely on the server-side.
-          const { data, error } = await supabase
-            .from('users')
-            .select('email')
-            .eq('username', usernameOrEmailInput.trim())
-            .single();
-
-          if (error) {
-            console.error('UserStore: Error fetching email by username:', error.message);
-            this.error = 'Username atau password salah.';
-            return false;
-          }
-
-          if (data && data.email) {
-            emailToAuthenticate = data.email;
-          } else {
-            this.error = 'Username atau password salah.';
-            return false;
-          }
+          const { data, error } = await supabase.from('users').select('email').eq('username', usernameOrEmailInput.trim()).single();
+          if (error) { this.error = 'Username atau password salah.'; return false; }
+          if (data && data.email) { emailToAuthenticate = data.email; } else { this.error = 'Username atau password salah.'; return false; }
         }
-
-        if (!emailToAuthenticate) {
-          this.error = 'Input login tidak valid.';
-          return false;
-        }
+        if (!emailToAuthenticate) { this.error = 'Input login tidak valid.'; return false; }
 
         const { data, error: authError } = await supabase.auth.signInWithPassword({
           email: emailToAuthenticate,
           password: passwordInput,
         });
 
-        if (authError) {
-          console.error('UserStore: Supabase Auth login error:', authError.message);
-          this.error = authError.message || 'Username atau password salah.';
-          return false;
-        }
+        if (authError) { console.error('UserStore: Supabase Auth login error:', authError.message); this.error = authError.message || 'Username atau password salah.'; return false; }
 
         if (data.user) {
           this.user = data.user;
           console.log('UserStore: Supabase Auth login successful. User:', this.user);
+          const { data: profileData, error: profileError } = await supabase.from('users').select('*').eq('id', this.user.id).single();
 
-          const { data: profileData, error: profileError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', this.user.id)
-            .single();
+          if (profileError) { console.error('UserStore: Error fetching profile data:', profileError.message); this.error = `Login berhasil, tetapi gagal memuat data profil: ${profileError.message}.`; this.profile = null; }
+          else { this.profile = profileData; }
 
-          if (profileError) {
-            console.error('UserStore: Error fetching profile data:', profileError.message);
-            this.error = `Login berhasil, tetapi gagal memuat data profil: ${profileError.message}.`;
-            this.profile = null;
-            // Penting: Jika profil tidak ditemukan, dan Anda masih ingin user dianggap login
-            // (tapi dengan profil kosong), Anda bisa 'return true' di sini.
-            // Namun, untuk halaman profil, userProfileData akan kosong.
-          } else {
-            this.profile = profileData;
-          }
+          // NEW: Simpan timestamp login/aktivitas
+          this.lastActivityTime = Date.now();
           localStorage.setItem('userProfile', JSON.stringify(this.profile));
           localStorage.setItem('userEmail', this.user.email || '');
+          localStorage.setItem('lastActivityTime', String(this.lastActivityTime)); // Simpan timestamp
 
           console.log('UserStore: Profile loaded:', this.profile);
           return true;
-        } else {
-          console.warn('UserStore: No user data after signInWithPassword, but no explicit error.');
-          this.error = 'Login gagal: Respon tidak valid.';
-          return false;
-        }
-      } catch (err: any) {
-        this.error = err.message || 'Terjadi kesalahan tidak terduga saat login.';
-        console.error('UserStore: Login error in catch block:', err.message);
-        return false;
-      } finally {
-        this.loading = false;
-      }
+        } else { console.warn('UserStore: No user data after signInWithPassword, but no explicit error.'); this.error = 'Login gagal: Respon tidak valid.'; return false; }
+      } catch (err: any) { this.error = err.message || 'Terjadi kesalahan tidak terduga saat login.'; console.error('UserStore: Login error in catch block:', err.message); return false; }
+      finally { this.loading = false; }
     },
 
-    // --- Logout Action ---
     async logout() {
       console.log('UserStore: Logging out...');
       this.loading = true;
       try {
         const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.error('UserStore: Supabase Auth logout error:', error.message);
-          throw new Error(error.message);
-        }
+        if (error) { console.error('UserStore: Supabase Auth logout error:', error.message); throw new Error(error.message); }
         this.user = null;
         this.profile = null;
+        this.lastActivityTime = null; // Bersihkan timestamp saat logout
         localStorage.removeItem('userProfile');
         localStorage.removeItem('userEmail');
+        localStorage.removeItem('lastActivityTime'); // Hapus timestamp dari localStorage
         console.log('UserStore: Logout successful.');
-      } catch (err: any) {
-        this.error = err.message || 'Terjadi kesalahan saat logout.';
-        console.error('UserStore: Logout error:', err.message);
-      } finally {
-        this.loading = false;
-      }
+      } catch (err: any) { this.error = err.message || 'Terjadi kesalahan saat logout.'; console.error('UserStore: Logout error:', err.message); }
+      finally { this.loading = false; }
     },
 
-    // --- Initialize User Action ---
     async initializeUser() {
       this.loading = true;
       try {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
+          // NEW: Periksa waktu aktivitas yang tersimpan untuk re-login paksa
+          const storedLastActivityTime = localStorage.getItem('lastActivityTime');
+          const ONE_MINUTE_MS = 60 * 1000; // 1 menit dalam milidetik
+
+          if (storedLastActivityTime && (Date.now() - parseInt(storedLastActivityTime, 10) > ONE_MINUTE_MS)) {
+            console.log('UserStore: Session expired due to inactivity/page close. Forcing re-login.');
+            await this.logout(); // Paksa logout
+            return false; // Indikasikan bahwa user tidak diinisialisasi karena timeout
+          }
+
           this.user = user;
           console.log('UserStore: Initialized from Supabase session. User:', user);
+          const { data: profileData, error: profileError } = await supabase.from('users').select('*').eq('id', this.user.id).single();
+          if (profileError) { console.error('UserStore: Error fetching profile during initialization:', profileError.message); this.profile = null; }
+          else { this.profile = profileData; }
 
-          const { data: profileData, error: profileError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', user.id)
-            .single();
+          this.lastActivityTime = Date.now(); // Perbarui waktu aktivitas saat inisialisasi berhasil
+          localStorage.setItem('lastActivityTime', String(this.lastActivityTime));
 
-          if (profileError) {
-            console.error('UserStore: Error fetching profile during initialization:', profileError.message);
-            this.profile = null;
-          } else {
-            this.profile = profileData;
-          }
           localStorage.setItem('userProfile', JSON.stringify(this.profile));
           localStorage.setItem('userEmail', user.email || '');
         } else {
           this.user = null;
           this.profile = null;
+          this.lastActivityTime = null; // Bersihkan jika tidak ada user
           localStorage.removeItem('userProfile');
           localStorage.removeItem('userEmail');
+          localStorage.removeItem('lastActivityTime');
           console.log('UserStore: No active Supabase session, state cleared.');
         }
-      } catch (error: any) {
-        console.error('UserStore: Error initializing user:', error.message);
-        this.user = null;
-        this.profile = null;
-        localStorage.removeItem('userProfile');
-        localStorage.removeItem('userEmail');
-      } finally {
-        this.loading = false;
+        return true; // Berhasil inisialisasi atau clear state
+      } catch (error: any) { console.error('UserStore: Error initializing user:', error.message); this.user = null; this.profile = null; this.lastActivityTime = null; localStorage.removeItem('userProfile'); localStorage.removeItem('userEmail'); localStorage.removeItem('lastActivityTime'); return false; }
+      finally { this.loading = false; }
+    },
+
+    // NEW ACTION: Aksi untuk memperbarui waktu aktivitas dari global listener
+    updateActivity() {
+      if (this.isLoggedIn) { // Hanya perbarui jika user sedang login
+        this.lastActivityTime = Date.now();
+        localStorage.setItem('lastActivityTime', String(this.lastActivityTime));
       }
     },
 
-    // --- NEW ACTION: Fetch All Users (Admin Only) ---
+    // --- Fetch All Users (Admin Only) ---
     async fetchAllUsers() {
       if (this.profile?.role !== 'admin') {
         this.error = 'Anda tidak memiliki izin untuk melihat daftar pengguna.';
@@ -279,7 +238,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    // --- NEW ACTION: Update User Role (Admin Only) ---
+    // --- Update User Role (Admin Only) ---
     async updateUserRole(userId: string, newRole: string) {
       if (this.profile?.role !== 'admin') {
         this.error = 'Anda tidak memiliki izin untuk mengubah peran pengguna.';
@@ -307,7 +266,6 @@ export const useUserStore = defineStore('user', {
           return false;
         }
 
-        // Perbarui allUsers array jika operasi berhasil
         const index = this.allUsers.findIndex(u => u.id === userId);
         if (index !== -1 && data && data.length > 0) {
           this.allUsers[index] = data[0];
@@ -323,7 +281,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    // --- NEW ACTION: Delete User (Admin Only - Requires Backend/Edge Function for auth.users) ---
+    // --- Delete User (Admin Only - Requires Backend/Edge Function for auth.users) ---
     async deleteUser(userId: string) {
       if (this.profile?.role !== 'admin') {
         this.error = 'Anda tidak memiliki izin untuk menghapus pengguna.';
@@ -363,7 +321,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    // --- NEW ACTION: Update User Profile (Self-Update for normal users) ---
+    // --- Update User Profile (Self-Update for normal users) ---
     async updateUserProfile(
       firstName: string,
       lastName: string,
@@ -385,9 +343,8 @@ export const useUserStore = defineStore('user', {
             last_name: lastName,
             username: username,
             phone: phone,
-            // Perbaikan: email dan role tidak diupdate di sini, mereka dikelola terpisah
           })
-          .eq('id', this.user.id) // Crucial: ensure user can only update their OWN profile
+          .eq('id', this.user.id)
           .select();
 
         if (error) {
@@ -421,7 +378,6 @@ export const useUserStore = defineStore('user', {
     getUserEmail: (state) => state.user?.email,
     getUsername: (state) => state.profile?.username,
     getUserFullName: (state) => `${state.profile?.first_name || ''} ${state.profile?.last_name || ''}`.trim(),
-    // userProfilePicture Getter (contoh, jika ada kolom 'profile_picture' di tabel 'users')
     userProfilePicture: (state) => state.profile?.profile_picture || '/images/user/default-avatar.jpg',
   }
 });

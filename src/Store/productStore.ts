@@ -10,6 +10,9 @@ export const useProductStore = defineStore('product', {
     userStore: null as any | null, // Toko milik user yang sedang login
     loading: false,
     error: null as string | null,
+
+    // PASTIKAN STATE INI ADA UNTUK HALAMAN DETAIL PRODUK
+    currentProductDetail: null as any | null,
   }),
   actions: {
     // --- Fetch Products for General Marketplace ---
@@ -17,8 +20,8 @@ export const useProductStore = defineStore('product', {
       this.loading = true;
       this.error = null;
       try {
-        // Ambil kolom yang relevan: id, name, description, price, image_url, category, status, created_by, store_id
-        let query = supabase.from('products').select('*, created_by_user:users(first_name, last_name, username)'); // Fetch creator's name too
+        // Ambil semua kolom yang relevan, termasuk created_by_user untuk nama pembuat
+        let query = supabase.from('products').select('*, created_by_user:users(first_name, last_name, username)');
 
         if (filters.category) {
           query = query.eq('category', filters.category);
@@ -26,10 +29,10 @@ export const useProductStore = defineStore('product', {
         if (filters.search) {
           query = query.ilike('name', `%${filters.search}%`);
         }
-        if (filters.status !== undefined) { // Untuk admin yang bisa filter status
+        if (filters.status !== undefined) {
              query = query.eq('status', filters.status);
         } else {
-             query = query.eq('status', 'active'); // Default hanya tampilkan produk aktif untuk umum
+             query = query.eq('status', 'active');
         }
 
         const { data, error } = await query;
@@ -63,7 +66,7 @@ export const useProductStore = defineStore('product', {
           return false;
         }
 
-        // Ambil kolom yang relevan, tanpa 'stock'
+        // Ambil semua kolom yang relevan dari tabel products
         const { data, error } = await supabase
           .from('products')
           .select('id, name, description, price, contact_wa, ecommerce_link, created_at, image_url, created_by, store_id, category, status')
@@ -87,8 +90,46 @@ export const useProductStore = defineStore('product', {
       }
     },
 
+    // --- NEW ACTION: Fetch Single Product by ID (PASTIKAN INI ADA) ---
+    async fetchProductById(productId: string) {
+      this.loading = true;
+      this.error = null;
+      this.currentProductDetail = null; // Bersihkan state detail sebelumnya
+
+      try {
+        // SELECT: Ambil semua kolom produk, dan juga JOIN dengan tabel 'users' untuk creator (created_by_user)
+        // dan tabel 'stores' untuk informasi toko (store).
+        const { data, error } = await supabase
+          .from('products')
+          .select('*, created_by_user:users(first_name, last_name, username), store:stores(store_name, contact_whatsapp, e_commerce_link)')
+          .eq('id', productId)
+          .single(); // Ambil hanya satu baris
+
+        if (error) {
+          // PGRST116 = no rows found (produk tidak ditemukan)
+          if (error.code === 'PGRST116') {
+            this.error = 'Produk tidak ditemukan.';
+          } else {
+            this.error = 'Gagal memuat detail produk: ' + error.message;
+          }
+          console.error('ProductStore: Error fetching product by ID:', error.message);
+          return false;
+        }
+
+        this.currentProductDetail = data;
+        console.log('ProductStore: Fetched product detail:', this.currentProductDetail.name);
+        return true;
+      } catch (err: any) {
+        this.error = err.message || 'Terjadi kesalahan tidak terduga saat memuat detail produk.';
+        console.error('ProductStore: Fetch product by ID error:', err.message);
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
+
     // --- Create a Product ---
-    async createProduct(productData: { name: string; description: string; price: number; image_url?: string; category?: string; status?: string; store_id?: string | null }) { // Hapus 'stock?: number;'
+    async createProduct(productData: { name: string; description: string; price: number; image_url?: string; category?: string; status?: string; store_id?: string | null; contact_wa?: string; ecommerce_link?: string }) {
       const userStore = useUserStore();
       if (!userStore.user) {
         this.error = 'Anda harus login untuk membuat produk.';
@@ -108,10 +149,11 @@ export const useProductStore = defineStore('product', {
           price: productData.price,
           image_url: productData.image_url,
           category: productData.category,
-          status: productData.status || (userStore.profile?.role === 'admin' ? 'active' : 'pending_review'), // status default
+          status: productData.status || (userStore.profile?.role === 'admin' ? 'active' : 'pending_review'),
           created_by: userStore.user.id,
           store_id: userStore.profile?.role === 'umkm' ? this.userStore?.id || null : null,
-          // 'stock' dihapus dari sini
+          contact_wa: productData.contact_wa,
+          ecommerce_link: productData.ecommerce_link,
         };
 
         const { data, error } = await supabase.from('products').insert(productToInsert).select();
@@ -137,8 +179,10 @@ export const useProductStore = defineStore('product', {
     },
 
     // --- Update a Product ---
-    async updateProduct(productId: string, productData: { name?: string; description?: string; price?: number; image_url?: string; category?: string; status?: string; store_id?: string | null }) { // Hapus 'stock?: number;'
+    async updateProduct(productId: string, productData: { name?: string; description?: string; price?: number; image_url?: string; category?: string; status?: string; store_id?: string | null; contact_wa?: string; ecommerce_link?: string }) {
       const userStore = useUserStore();
+      this.loading = true;
+      this.error = null;
       if (!userStore.user) {
         this.error = 'Anda harus login untuk memperbarui produk.';
         return false;
@@ -157,7 +201,7 @@ export const useProductStore = defineStore('product', {
       try {
         const { data, error } = await supabase
           .from('products')
-          .update(productData) // productData tidak lagi mengandung 'stock'
+          .update(productData)
           .eq('id', productId)
           .select();
 
@@ -187,6 +231,8 @@ export const useProductStore = defineStore('product', {
     // --- Delete a Product ---
     async deleteProduct(productId: string) {
       const userStore = useUserStore();
+      this.loading = true;
+      this.error = null;
       if (!userStore.user) {
         this.error = 'Anda harus login untuk menghapus produk.';
         return false;
@@ -230,6 +276,8 @@ export const useProductStore = defineStore('product', {
     // --- Create UMKM Store ---
     async createStore(storeData: { store_name: string; store_description?: string; contact_whatsapp?: string; e_commerce_link?: string }) {
       const userStore = useUserStore();
+      this.loading = true;
+      this.error = null;
       if (!userStore.user || userStore.profile?.role !== 'umkm') {
         this.error = 'Hanya UMKM yang bisa membuat toko.';
         return false;
@@ -298,6 +346,8 @@ export const useProductStore = defineStore('product', {
     // --- Update User's Store ---
     async updateStore(storeId: string, storeData: any) {
       const userStore = useUserStore();
+      this.loading = true;
+      this.error = null;
       if (!userStore.user || (userStore.profile?.role !== 'umkm' && userStore.profile?.role !== 'admin')) {
         this.error = 'Anda tidak memiliki izin untuk memperbarui toko.';
         return false;
@@ -332,10 +382,10 @@ export const useProductStore = defineStore('product', {
         this.loading = false;
       }
     },
-  },
-  getters: {
-    allMarketplaceProducts: (state) => state.products,
-    myUmkmProducts: (state) => state.umkmProducts,
-    myStore: (state) => state.userStore,
-  }
+  },
+  getters: {
+    allMarketplaceProducts: (state) => state.products,
+    myUmkmProducts: (state) => state.umkmProducts,
+    myStore: (state) => state.userStore,
+  }
 });

@@ -2,8 +2,8 @@
   <AdminLayout>
     <Breadcrumb :pageTitle="pageTitle" :breadcrumbItems="breadcrumbItems" />
 
-    <div class="px-6 py-8">
-      <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Daftar Pengguna</h1>
+    <div class="px-6 py-8 dark:bg-gray-900 min-h-screen">
+      <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Manajemen Pengguna</h1>
 
       <div v-if="userStore.loading" class="text-center text-gray-600 dark:text-gray-400">
         Memuat daftar pengguna...
@@ -27,11 +27,17 @@
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Email
                 </th>
-                </tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Role
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Aksi
+                </th>
+              </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               <tr v-if="userStore.allUsers.length === 0 && !userStore.loading">
-                  <td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+                  <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
                       Tidak ada pengguna ditemukan.
                   </td>
               </tr>
@@ -45,7 +51,28 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {{ user.email }}
                 </td>
-                </tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <select
+                    v-model="user.role"
+                    @change="handleRoleChange(user.id, user.role)"
+                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    :disabled="user.id === userStore.user?.id"
+                  >
+                    <option v-for="roleOption in userStore.userRoles" :key="roleOption" :value="roleOption">
+                      {{ formatRole(roleOption) }}
+                    </option>
+                  </select>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button
+                    @click="confirmDelete(user)"
+                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-600 ml-4"
+                    :disabled="user.id === userStore.user?.id"
+                  >
+                    Hapus
+                  </button>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -56,7 +83,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { useUserStore } from '@/store/userStore';
+import { useUserStore } from '@/store/userStore'; // Menggunakan @/stores/userStore
 import { useRouter } from 'vue-router';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
@@ -64,33 +91,62 @@ import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
 const userStore = useUserStore();
 const router = useRouter();
 
-const pageTitle = ref('Daftar Pengguna'); // Mengubah judul
+const pageTitle = ref('Manajemen Pengguna');
 const breadcrumbItems = ref([
   { label: 'Admin', path: '/admin' },
-  { label: 'Daftar Pengguna', path: '/admin/users' } // Mengubah label breadcrumb
+  { label: 'Manajemen Pengguna', path: '/admin/users' }
 ]);
 
-// Fungsi formatRole tidak lagi diperlukan di template ini, tapi bisa tetap ada untuk jaga-jaga
-// const formatRole = (role: string) => {
-//   if (!role) return '';
-//   return role.charAt(0).toUpperCase() + role.slice(1);
-// };
+// Fungsi untuk mengkapitalisasi huruf pertama dari role
+const formatRole = (role: string) => {
+  if (!role) return '';
+  return role.charAt(0).toUpperCase() + role.slice(1);
+};
 
-// Fungsi handleRoleChange dan confirmDelete DIHAPUS karena tidak ada lagi elemen UI yang memanggilnya.
-// Jika Anda mengembalikan fungsionalitasnya, Anda perlu mengembalikan fungsi-fungsi ini juga.
+// Fungsi untuk menangani perubahan role
+const handleRoleChange = async (userId: string, newRole: string) => {
+  if (confirm(`Apakah Anda yakin ingin mengubah peran pengguna ini menjadi ${formatRole(newRole)}?`)) {
+    const success = await userStore.updateUserRole(userId, newRole);
+    if (success) {
+      alert('Peran pengguna berhasil diperbarui!');
+      // userStore.allUsers sudah diupdate di userStore.updateUserRole
+    } else {
+      alert('Gagal memperbarui peran pengguna: ' + (userStore.error || 'Terjadi kesalahan.'));
+      await userStore.fetchAllUsers(); // Muat ulang data jika gagal update atau dibatalkan
+    }
+  } else {
+    await userStore.fetchAllUsers(); // Muat ulang data jika dibatalkan
+  }
+};
+
+// Fungsi untuk konfirmasi dan menghapus user
+const confirmDelete = async (user: any) => {
+  if (user.id === userStore.user?.id) {
+    alert('Anda tidak bisa menghapus akun Anda sendiri.');
+    return;
+  }
+
+  if (confirm(`Apakah Anda yakin ingin menghapus pengguna ${user.username} (${user.email})? Tindakan ini tidak dapat dibatalkan.`)) {
+    const success = await userStore.deleteUser(user.id);
+    if (success) {
+      alert('Pengguna berhasil dihapus dari profil.');
+      // userStore.allUsers sudah difilter di userStore.deleteUser
+    } else {
+      alert('Gagal menghapus pengguna: ' + (userStore.error || 'Terjadi kesalahan.'));
+    }
+  }
+};
 
 onMounted(async () => {
-  // Pastikan user data dimuat untuk otentikasi dasar (isLoggedIn)
   await userStore.initializeUser();
 
-  // Jika Anda ingin halaman ini hanya menampilkan data dan sementara tidak peduli role admin
-  // Hapus pengecekan role admin untuk debugging atau tampilan sementara.
-  // if (userStore.profile?.role === 'admin') {
-      await userStore.fetchAllUsers();
-  // } else {
-  //   alert('Anda tidak memiliki izin untuk mengakses halaman ini.');
-  //   router.push('/dashboard');
-  // }
+  // Pastikan user adalah admin sebelum mencoba mengambil daftar user
+  if (userStore.isLoggedIn && userStore.profile?.role === 'admin') {
+    await userStore.fetchAllUsers();
+  } else {
+    alert('Anda tidak memiliki izin untuk mengakses halaman ini.');
+    router.push('/dashboard');
+  }
 });
 </script>
 
@@ -102,8 +158,7 @@ table {
 th, td {
   text-align: left;
 }
-/* Select styling tidak lagi relevan karena dropdown role dihapus sementara */
-/* select {
+select {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -112,5 +167,5 @@ th, td {
   background-repeat: no-repeat;
   background-size: 1.5em;
   padding-right: 2.5rem;
-} */
+}
 </style>
