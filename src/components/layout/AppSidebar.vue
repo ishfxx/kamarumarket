@@ -301,7 +301,8 @@ const allMenuGroups = [
         roles: ['admin'],
         subItems: [
           { name: "Manajemen Pengguna", path: "/verifikasi", roles: ['admin'] },
-          { name: "Manajemen Produk", path: "/review", roles: ['admin'] },
+          { name: "Review Produk", path: "/review", roles: ['admin'] },
+          { name: "Manage Produk", path: "/manageproduct", roles: ['admin'] },
         ],
       },
     ]

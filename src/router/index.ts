@@ -82,7 +82,13 @@ const router = createRouter({
       path: '/review',
       name: 'Review',
       component: () => import('@/views/Admin/AdminProductReview.vue'),
-      meta: { requiresAuth: true, umkmOnly: true, layout: 'AdminLayout' }
+      meta: { requiresAuth: true, adminOnly: true, layout: 'AdminLayout' }
+    },
+    {
+      path: '/manageproduct',
+      name: 'ManagementProduct',
+      component: () => import('@/views/Admin/AdminProductManagement.vue'),
+      meta: { requiresAuth: true, adminOnly: true, layout: 'AdminLayout' }
     },
     {
       path: '/marketplace/product/:id', // Ini adalah rute detail produk
