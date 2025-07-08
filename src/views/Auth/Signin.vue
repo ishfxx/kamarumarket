@@ -14,7 +14,7 @@
                 <img width="{231}" height="{48}" src="@/assets/images/kapas_madya.png" alt="Logo" />
               </router-link>
               <p class="text-center text-gray-200 dark:text-white/60 text-7xl font-sans">
-                BUKAPAS
+                KAMARU
               </p>
             </div>
           </div>
@@ -46,7 +46,7 @@
             </router-link>
             <div class="lg:hidden flex justify-center py-4">
               <router-link to="/" class="block">
-                <img width="{150}" src="@/assets/images/kapas_madya.png" alt="Logo" />
+                <img width="100" src="@/assets/images/kapas_madya.png" alt="Logo" />
               </router-link>
             </div>
           </div>
@@ -236,12 +236,10 @@ const handleSubmit = async () => {
     return;
   }
 
-  console.log('Signin.vue: Calling userStore.login with:', trimmedInput);
   const success = await userStore.login(trimmedInput, password.value);
 
   if (success) {
-    console.log('Signin.vue: Login successful. UserStore state - user:', userStore.user, 'profile:', userStore.profile);
-    alert('Login berhasil! Selamat datang, ' + (userStore.profile?.first_name || userStore.profile?.username || userStore.user?.email || 'Pengguna') + '!');
+
     router.push('/dashboard');
   } else {
     console.error('Signin.vue: Login failed. Error:', userStore.error);

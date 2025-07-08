@@ -140,7 +140,6 @@
               <button
                   @click="redirectToWhatsApp(productStore.currentProductDetail.store?.contact_whatsapp)"
                   class="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700"
-                  :disabled="!productStore.currentProductDetail.store?.contact_whatsapp"
               >
                 Hubungi Penjual
               </button>

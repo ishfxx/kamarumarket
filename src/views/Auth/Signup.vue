@@ -292,7 +292,6 @@ const handleSignup = async () => {
     return;
   }
 
-  console.log('Signup.vue: Calling userStore.register...');
   const success = await userStore.register(
     trimmedEmail,
     password.value,

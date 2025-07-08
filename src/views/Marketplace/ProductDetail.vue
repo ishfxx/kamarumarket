@@ -130,15 +130,12 @@ const redirectToWhatsApp = (whatsappNumber?: string) => {
 
 // --- Logika Pengambilan Data ---
 const fetchProductData = async (productId: string) => {
-  console.log('ProductDetail.vue: Calling fetchProductById for ID:', productId);
   await productStore.fetchProductById(productId);
-  console.log('ProductDetail.vue: fetchProductById finished. Current productStore.productDetail:', productStore.productDetail);
 };
 
 // Watch untuk mengambil data produk setiap kali ID di URL berubah
 // `immediate: true` akan menjalankan ini segera setelah komponen dipasang
 watch(() => route.params.id, (newId) => {
-  console.log('ProductDetail.vue: route.params.id changed to (or initial):', newId);
   if (newId) {
     fetchProductData(newId as string);
   } else {
@@ -149,8 +146,7 @@ watch(() => route.params.id, (newId) => {
 }, { immediate: true });
 
 onMounted(() => {
-  console.log('ProductDetail.vue: Component mounted.');
-  // Data produk akan diambil oleh watcher di atas, jadi tidak perlu panggil fetchProductData lagi di sini.
+
 });
 </script>
 

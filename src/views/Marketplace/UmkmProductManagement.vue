@@ -46,7 +46,7 @@
                   <img :src="product.image_url || '/images/default-product.jpg'" alt="Produk" class="w-16 h-16 object-cover rounded-md">
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ product.name }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Rp {{ formatRupiah(product.price) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatRupiah(product.price) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ product.category || '-' }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span :class="[
@@ -86,9 +86,12 @@
             <input type="number" id="productPrice" v-model.number="currentProduct.price" required min="0" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
           </div>
           <div class="mb-4">
-            <label for="productCategory" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Kategori</label>
-            <input type="text" id="productCategory" v-model="currentProduct.category" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-          </div>
+          <label for="productCategory" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Kategori</label>
+          <select id="productCategory" v-model="currentProduct.category" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <option value="" disabled>Pilih Kategori</option>
+            <option v-for="categoryOption in categories" :key="categoryOption" :value="categoryOption">{{ categoryOption }}</option>
+          </select>
+        </div>
           <div class="mb-6">
             <label for="productImage" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Gambar Produk</label>
             <input type="file" id="productImage" accept="image/*" @change="handleImageUpload" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
@@ -156,6 +159,20 @@ const formatStatus = (status: string) => {
     default: return status;
   }
 };
+
+const categories = ref([
+  'Elektronik',
+  'Makanan & Minuman',
+  'Fashion Pria',
+  'Fashion Wanita',
+  'Perlengkapan Rumah',
+  'Kecantikan',
+  'Otomotif',
+  'Olahraga',
+  'Buku & Alat Tulis',
+  'Kerajinan Tangan',
+  'Lain-lain'
+]);
 
 const openAddProductModal = () => {
   isEditMode.value = false;

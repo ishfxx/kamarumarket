@@ -25,7 +25,6 @@ export const useUserStore = defineStore('user', {
     ) {
       this.loading = true;
       this.error = null;
-      console.log('UserStore: Attempting to register new user with email:', emailInput);
 
       try {
         const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -48,8 +47,6 @@ export const useUserStore = defineStore('user', {
 
         if (authData.user) {
           this.user = authData.user;
-          console.log('UserStore: Supabase Auth signup successful. User ID:', this.user.id);
-
           const { data: profileData, error: profileError } = await supabase
             .from('users') // Menggunakan nama tabel 'users'
             .insert([
@@ -76,11 +73,8 @@ export const useUserStore = defineStore('user', {
           localStorage.setItem('userEmail', emailInput.trim());
           this.lastActivityTime = Date.now(); // Set activity time on successful registration
           localStorage.setItem('lastActivityTime', String(this.lastActivityTime));
-
-          console.log('UserStore: Profile saved successfully:', this.profile);
           return true;
         } else if (authData.user === null && authData.session === null) {
-          console.log('UserStore: Signup successful, but verification email sent. User not yet active.');
           this.error = 'Pendaftaran berhasil! Silakan periksa email Anda untuk verifikasi dan aktivasi akun.';
           return true;
         }
@@ -98,8 +92,6 @@ export const useUserStore = defineStore('user', {
     async login(usernameOrEmailInput: string, passwordInput: string) {
       this.loading = true;
       this.error = null;
-      console.log('UserStore: Attempting to log in with username/email:', usernameOrEmailInput);
-
       try {
         let emailToAuthenticate: string | null = null;
         if (usernameOrEmailInput.includes('@')) {
@@ -120,7 +112,6 @@ export const useUserStore = defineStore('user', {
 
         if (data.user) {
           this.user = data.user;
-          console.log('UserStore: Supabase Auth login successful. User:', this.user);
           const { data: profileData, error: profileError } = await supabase.from('users').select('*').eq('id', this.user.id).single();
 
           if (profileError) { console.error('UserStore: Error fetching profile data:', profileError.message); this.error = `Login berhasil, tetapi gagal memuat data profil: ${profileError.message}.`; this.profile = null; }
@@ -132,7 +123,6 @@ export const useUserStore = defineStore('user', {
           localStorage.setItem('userEmail', this.user.email || '');
           localStorage.setItem('lastActivityTime', String(this.lastActivityTime)); // Simpan timestamp
 
-          console.log('UserStore: Profile loaded:', this.profile);
           return true;
         } else { console.warn('UserStore: No user data after signInWithPassword, but no explicit error.'); this.error = 'Login gagal: Respon tidak valid.'; return false; }
       } catch (err: any) { this.error = err.message || 'Terjadi kesalahan tidak terduga saat login.'; console.error('UserStore: Login error in catch block:', err.message); return false; }
@@ -140,7 +130,6 @@ export const useUserStore = defineStore('user', {
     },
 
     async logout() {
-      console.log('UserStore: Logging out...');
       this.loading = true;
       try {
         const { error } = await supabase.auth.signOut();
@@ -151,7 +140,6 @@ export const useUserStore = defineStore('user', {
         localStorage.removeItem('userProfile');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('lastActivityTime'); // Hapus timestamp dari localStorage
-        console.log('UserStore: Logout successful.');
       } catch (err: any) { this.error = err.message || 'Terjadi kesalahan saat logout.'; console.error('UserStore: Logout error:', err.message); }
       finally { this.loading = false; }
     },
@@ -167,13 +155,11 @@ export const useUserStore = defineStore('user', {
           const ONE_MINUTE_MS = 60 * 1000; // 1 menit dalam milidetik
 
           if (storedLastActivityTime && (Date.now() - parseInt(storedLastActivityTime, 10) > ONE_MINUTE_MS)) {
-            console.log('UserStore: Session expired due to inactivity/page close. Forcing re-login.');
             await this.logout(); // Paksa logout
             return false; // Indikasikan bahwa user tidak diinisialisasi karena timeout
           }
 
           this.user = user;
-          console.log('UserStore: Initialized from Supabase session. User:', user);
           const { data: profileData, error: profileError } = await supabase.from('users').select('*').eq('id', this.user.id).single();
           if (profileError) { console.error('UserStore: Error fetching profile during initialization:', profileError.message); this.profile = null; }
           else { this.profile = profileData; }
@@ -190,7 +176,6 @@ export const useUserStore = defineStore('user', {
           localStorage.removeItem('userProfile');
           localStorage.removeItem('userEmail');
           localStorage.removeItem('lastActivityTime');
-          console.log('UserStore: No active Supabase session, state cleared.');
         }
         return true; // Berhasil inisialisasi atau clear state
       } catch (error: any) { console.error('UserStore: Error initializing user:', error.message); this.user = null; this.profile = null; this.lastActivityTime = null; localStorage.removeItem('userProfile'); localStorage.removeItem('userEmail'); localStorage.removeItem('lastActivityTime'); return false; }
@@ -227,7 +212,6 @@ export const useUserStore = defineStore('user', {
         }
 
         this.allUsers = data || [];
-        console.log(`UserStore: Successfully fetched ${this.allUsers.length} users.`);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat memuat pengguna.';
@@ -270,7 +254,6 @@ export const useUserStore = defineStore('user', {
         if (index !== -1 && data && data.length > 0) {
           this.allUsers[index] = data[0];
         }
-        console.log(`UserStore: User ${userId} role updated to ${newRole}.`);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat memperbarui peran.';
@@ -309,8 +292,6 @@ export const useUserStore = defineStore('user', {
         }
 
         this.allUsers = this.allUsers.filter(u => u.id !== userId);
-        console.log(`UserStore: User profile ${userId} deleted from 'users' table.`);
-
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat menghapus pengguna.';
@@ -356,7 +337,6 @@ export const useUserStore = defineStore('user', {
         if (data && data.length > 0) {
           this.profile = data[0];
           localStorage.setItem('userProfile', JSON.stringify(this.profile));
-          console.log('UserStore: Profile updated successfully:', this.profile);
           return true;
         } else {
           this.error = 'Gagal memperbarui profil: Data tidak ditemukan setelah pembaruan.';

@@ -4,10 +4,6 @@
       class="flex items-center text-gray-700 dark:text-gray-400"
       @click.prevent="toggleDropdown"
     >
-      <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img :src="userStore.profile?.profile_picture || '/images/user/owner.jpg'" alt="User" />
-      </span>
-
       <span class="block mr-1 font-medium text-theme-sm">
         <template v-if="userStore.isLoggedIn">
           {{ userStore.getUserFullName || userStore.getUsername || 'Pengguna' }}
@@ -140,7 +136,6 @@ onMounted(() => {
   // jadi di sini kita hanya perlu memastikan data sudah tersedia.
   // Jika ada masalah dengan reaktivitas, bisa tambahkan watchEffect
   // tapi biasanya Pinia sudah cukup reaktif.
-  console.log('UserMenu.vue: Component mounted. UserStore state - FullName:', userStore.getUserFullName, 'Role:', userStore.getUserRole);
 });
 
 onUnmounted(() => {

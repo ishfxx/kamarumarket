@@ -70,7 +70,6 @@ export const useBookkeepingStore = defineStore('bookkeeping', {
         }
 
         this.transactions = data || [];
-        console.log(`BookkeepingStore: Fetched ${this.transactions.length} transactions of type ${type || 'all'} for UMKM ${umkmId || 'all'} in range ${startDate || 'start'} to ${endDate || 'end'}.`);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat memuat transaksi.';
@@ -107,7 +106,6 @@ export const useBookkeepingStore = defineStore('bookkeeping', {
 
         if (data && data.length > 0) {
           this.transactions.unshift(data[0]);
-          console.log('BookkeepingStore: Transaction created successfully:', data[0]);
           return true;
         }
         return false;
@@ -146,7 +144,6 @@ export const useBookkeepingStore = defineStore('bookkeeping', {
           if (index !== -1) {
             this.transactions[index] = data[0];
           }
-          console.log('BookkeepingStore: Transaction updated successfully:', data[0]);
           return true;
         }
         return false;
@@ -181,7 +178,6 @@ export const useBookkeepingStore = defineStore('bookkeeping', {
         }
 
         this.transactions = this.transactions.filter(t => t.id !== id);
-        console.log(`BookkeepingStore: Transaction ${id} deleted.`);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat menghapus transaksi.';

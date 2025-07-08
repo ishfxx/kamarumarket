@@ -89,7 +89,6 @@ export const useProductStore = defineStore('product', {
         }
 
         this.products = data as Product[] || []; // Pastikan tipe data Product[]
-        console.log(`ProductStore: Fetched ${this.products.length} products.`);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat memuat produk.';
@@ -125,7 +124,6 @@ export const useProductStore = defineStore('product', {
         }
 
         this.umkmProducts = data as Product[] || []; // Pastikan tipe data Product[]
-        console.log(`ProductStore: Fetched ${this.umkmProducts.length} UMKM products for ${umkmId}.`);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat memuat produk UMKM.';
@@ -160,7 +158,6 @@ export const useProductStore = defineStore('product', {
         }
 
         this.currentProductDetail = data as Product; // Pastikan tipe data Product
-        console.log('ProductStore: Fetched product detail:', this.currentProductDetail.name);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat memuat detail produk.';
@@ -216,7 +213,6 @@ export const useProductStore = defineStore('product', {
         // Misalnya, jika statusnya langsung active, bisa langsung tampil di marketplace
         // this.products.push(data[0] as Product); // Opsional, tergantung kebutuhan
 
-        console.log('ProductStore: Product created successfully:', data[0]);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat membuat produk.';
@@ -289,7 +285,6 @@ export const useProductStore = defineStore('product', {
             this.currentProductDetail = updatedProduct;
         }
 
-        console.log('ProductStore: Product updated successfully:', updatedProduct);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat memperbarui produk.';
@@ -349,7 +344,6 @@ export const useProductStore = defineStore('product', {
         if (this.currentProductDetail && this.currentProductDetail.id === productId) {
             this.currentProductDetail = null;
         }
-        console.log(`ProductStore: Product ${productId} deleted.`);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat menghapus produk.';
@@ -389,7 +383,6 @@ export const useProductStore = defineStore('product', {
           return false;
         }
         userStore.setMyStore(data[0] as Store); // Update userStore.myStore juga
-        console.log('ProductStore: Store created successfully:', data[0]);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat membuat toko.';
@@ -422,7 +415,6 @@ export const useProductStore = defineStore('product', {
         // Ini adalah tempat Anda mungkin ingin memperbarui state di userStore juga
         // const userStore = useUserStore();
         // userStore.setMyStore(data as Store || null); // Jika userStore memiliki setter untuk myStore
-        console.log('ProductStore: User store fetched:', this.userStore);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat memuat toko.';
@@ -464,7 +456,6 @@ export const useProductStore = defineStore('product', {
         }
         this.userStore = data[0] as Store; // Update local state jika Anda masih menggunakannya
         userStore.setMyStore(data[0] as Store); // Update userStore.myStore
-        console.log('ProductStore: Store updated successfully:', this.userStore);
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat memperbarui toko.';
