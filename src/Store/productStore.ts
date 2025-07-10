@@ -16,8 +16,8 @@ interface Product {
   created_at: string;
   created_by: string;
   store_id?: string | null;
-  contact_wa?: string; // Menambahkan ini agar tipe lebih akurat
-  ecommerce_link?: string; // Menambahkan ini agar tipe lebih akurat
+  // contact_wa?: string; // Menambahkan ini agar tipe lebih akurat
+  // ecommerce_link?: string; // Menambahkan ini agar tipe lebih akurat
   created_by_user?: {
     first_name?: string;
     last_name?: string;

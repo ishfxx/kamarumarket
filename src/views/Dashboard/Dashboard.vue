@@ -2,8 +2,6 @@
   <AdminLayout> <Breadcrumb :pageTitle="pageTitle" :breadcrumbItems="breadcrumbItems" />
 
     <div class="px-6 py-8 dark:bg-gray-900 min-h-screen">
-      <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Dashboard {{ getRoleDisplayName(userStore.getUserRole) }}</h1>
-
       <div v-if="userStore.loading || productStore.loading" class="text-center text-gray-600 dark:text-gray-400">
         Memuat data dashboard...
       </div>
@@ -13,7 +11,6 @@
       </div>
 
       <div v-if="userStore.isAdmin">
-        <h2 class="text-2xl font-semibold text-gray-700 dark:text-white mb-4">Ringkasan Admin</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Total Pengguna</h3>
@@ -48,7 +45,7 @@
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             <tr v-for="product in latestProductsAdmin" :key="product.id">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ product.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Rp {{ formatRupiah(product.price) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatRupiah(product.price) }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatStatus(product.status) }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ getCreatorName(product.created_by) }}</td>
                             </tr>
@@ -95,7 +92,7 @@
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             <tr v-for="product in latestUmkmProducts" :key="product.id">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ product.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Rp {{ formatRupiah(product.price) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatRupiah(product.price) }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatStatus(product.status) }}</td>
                             </tr>
                         </tbody>

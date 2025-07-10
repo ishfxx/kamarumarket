@@ -2,8 +2,6 @@
   <AdminLayout> <Breadcrumb :pageTitle="pageTitle" :breadcrumbItems="breadcrumbItems" />
 
     <div class="px-6 py-8">
-      <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Profil Saya</h1>
-
       <div v-if="userStore.loading" class="text-center text-gray-600 dark:text-gray-400">
         Memuat data profil...
       </div>

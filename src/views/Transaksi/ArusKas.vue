@@ -3,7 +3,6 @@
     <Breadcrumb :pageTitle="pageTitle" :breadcrumbItems="breadcrumbItems" />
 
     <div class="px-6 py-8 dark:bg-gray-900 min-h-screen">
-      <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Laporan Arus Kas (Sederhana)</h1>
       <p class="text-gray-600 dark:text-gray-400 mb-6">
         Ringkasan aliran kas masuk dan kas keluar dalam periode waktu tertentu.
       </p>

@@ -152,7 +152,7 @@ export const useUserStore = defineStore('user', {
         if (user) {
           // NEW: Periksa waktu aktivitas yang tersimpan untuk re-login paksa
           const storedLastActivityTime = localStorage.getItem('lastActivityTime');
-          const ONE_MINUTE_MS = 60 * 1000; // 1 menit dalam milidetik
+          const ONE_MINUTE_MS = 300 * 1000; // 1 menit dalam milidetik
 
           if (storedLastActivityTime && (Date.now() - parseInt(storedLastActivityTime, 10) > ONE_MINUTE_MS)) {
             await this.logout(); // Paksa logout

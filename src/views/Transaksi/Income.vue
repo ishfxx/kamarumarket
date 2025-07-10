@@ -3,8 +3,6 @@
     <Breadcrumb :pageTitle="pageTitle" :breadcrumbItems="breadcrumbItems" />
 
     <div class="px-6 py-8 dark:bg-gray-900 min-h-screen">
-      <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Pemasukan</h1>
-
       <div v-if="bookkeepingStore.loading" class="text-center text-gray-600 dark:text-gray-400">
         Memuat data pemasukan...
       </div>
@@ -70,7 +68,7 @@
       </div>
     </div>
 
-    <div v-if="showEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+    <div v-if="showEditModal" class="fixed inset-0 md-blur backdrop-blur-md overflow-y-auto h-full w-full flex items-center justify-center z-50">
       <div class="relative p-8 bg-white dark:bg-gray-800 w-full max-w-lg mx-auto rounded-lg shadow-lg">
         <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Pemasukan</h3>
         <form @submit.prevent="saveEditedTransaction">

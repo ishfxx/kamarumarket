@@ -3,10 +3,6 @@
     <Navbar />
 
     <div class="space-y-8 p-4 sm:p-8 dark:bg-gray-900 min-h-screen">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white">Jelajahi Produk UMKM</h2>
-      </div>
-
       <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end mb-8">
         <div class="md:col-span-1">
           <label for="filterKategori" class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-400">Filter Kategori</label>
@@ -73,84 +69,94 @@
       </div>
     </div>
 
-    <div v-if="showDetailOverlay" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md p-4">
-      <div class="relative bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <button
-          @click="closeProductDetailOverlay"
-          class="absolute top-4 right-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 z-10"
-        >
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
+    <transition name="fade">
+      <div v-if="showDetailOverlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 md-blur dropset-blur-md backdrop-blur-sm" @click.self="closeProductDetailOverlay">
+        <transition name="slide-up">
+          <div v-if="showDetailOverlay" class="relative bg-white dark:bg-gray-800 shadow-xl rounded-xl overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col transform transition-all duration-300">
+            <button
+              @click="closeProductDetailOverlay"
+              class="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 z-10 p-2 rounded-full bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm transition-colors duration-200"
+              aria-label="Tutup"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
 
-        <div v-if="productStore.loading" class="text-center text-gray-600 dark:text-gray-400 py-12 text-lg">
-          Memuat detail produk...
-        </div>
-        <div v-else-if="productStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative m-4" role="alert">
-          <strong class="font-bold">Error:</strong>
-          <span class="block sm:inline">{{ productStore.error }}</span>
-          <p v-if="productStore.error && productStore.error.includes('Produk tidak ditemukan')" class="text-xs mt-2">
-            Produk ini mungkin telah dihapus atau tidak aktif.
-          </p>
-        </div>
-        <div v-else-if="productStore.currentProductDetail" class="md:flex">
-          <div class="md:w-1/2 p-4 md:p-8">
-            <img :src="productStore.currentProductDetail.image_url || '/images/default-product.jpg'" :alt="productStore.currentProductDetail.name" class="w-full h-96 object-contain rounded-lg">
+            <div v-if="productStore.loading" class="flex-grow flex items-center justify-center py-12 text-lg text-gray-600 dark:text-gray-400">
+              Memuat detail produk...
+            </div>
+            <div v-else-if="productStore.error" class="flex-grow bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded relative m-4 flex flex-col justify-center items-center text-center" role="alert">
+              <strong class="font-bold text-xl mb-2">Error:</strong>
+              <span class="block text-lg">{{ productStore.error }}</span>
+              <p v-if="productStore.error && productStore.error.includes('Produk tidak ditemukan')" class="text-sm mt-3">
+                Produk ini mungkin telah dihapus atau tidak aktif.
+              </p>
+            </div>
+            <div v-else-if="productStore.currentProductDetail" class="flex-grow overflow-y-auto custom-scrollbar">
+              <div class="md:flex h-full">
+                <div class="md:w-1/2 flex items-center justify-center p-4 md:p-8 bg-gray-50 dark:bg-gray-900">
+                  <img :src="productStore.currentProductDetail.image_url || '/images/default-product.jpg'" :alt="productStore.currentProductDetail.name" class="max-w-full max-h-full object-contain rounded-lg shadow-md">
+                </div>
+                <div class="md:w-1/2 p-4 md:p-8 flex flex-col">
+                  <span class="text-sm text-gray-500 dark:text-gray-400 mb-2">{{ productStore.currentProductDetail.category || 'Tidak Berkategori' }}</span>
+                  <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-3">{{ productStore.currentProductDetail.name }}</h1>
+                  <p class="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-6">{{ formatRupiah(productStore.currentProductDetail.price) }}</p>
+
+                  <div class="mb-6">
+                    <h3 class="text-md font-semibold text-gray-800 dark:text-gray-200 mb-2">Deskripsi Produk:</h3>
+                    <p class="text-gray-700 dark:text-gray-300 leading-relaxed text-sm sm:text-base">{{ productStore.currentProductDetail.description }}</p>
+                  </div>
+
+                  <div class="border-t border-gray-200 dark:border-gray-700 pt-6 mt-auto">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Informasi Penjual</h2>
+                    <p v-if="productStore.currentProductDetail.created_by_user" class="text-gray-700 dark:text-gray-300 text-sm sm:text-base">
+                      <span class="font-semibold">Dibuat Oleh:</span> {{ productStore.currentProductDetail.created_by_user.first_name || productStore.currentProductDetail.created_by_user.username || 'Tidak Diketahui' }}
+                    </p>
+                    <p v-else class="text-gray-700 dark:text-gray-300 text-sm sm:text-base">
+                        <span class="font-semibold">Dibuat Oleh:</span> Tidak Diketahui
+                    </p>
+
+                    <p v-if="productStore.currentProductDetail.store" class="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base">
+                      <span class="font-semibold">Toko:</span> {{ productStore.currentProductDetail.store.store_name }}
+                    </p>
+                    <p v-if="productStore.currentProductDetail.store?.contact_whatsapp" class="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base">
+                      <span class="font-semibold">WhatsApp:</span> <a :href="`https://wa.me/${productStore.currentProductDetail.store.contact_whatsapp}`" target="_blank" class="text-blue-500 hover:underline">{{ productStore.currentProductDetail.store.contact_whatsapp }}</a>
+                    </p>
+                    <p v-if="productStore.currentProductDetail.store?.ecommerce_link" class="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base">
+                      <span class="font-semibold">Link E-commerce:</span> <a :href="formatLink(productStore.currentProductDetail.store.ecommerce_link)" target="_blank" class="text-blue-500 hover:underline break-all">{{ productStore.currentProductDetail.store.ecommerce_link }}</a>
+                    </p>
+                    <p v-else-if="productStore.currentProductDetail.created_by_user && productStore.currentProductDetail.created_by_user.role === 'umkm' && !productStore.currentProductDetail.store" class="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base">
+                      UMKM ini belum memiliki profil toko yang lengkap.
+                    </p>
+                  </div>
+
+                  <div class="mt-8 flex gap-4 flex-wrap">
+                    <button
+                      @click="redirectToWhatsApp(productStore.currentProductDetail.store?.contact_whatsapp, productStore.currentProductDetail.name)"
+                      class="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors duration-200 flex-grow sm:flex-grow-0"
+                    >
+                      Hubungi Penjual
+                    </button>
+
+                    <button
+                      v-if="productStore.currentProductDetail.store?.ecommerce_link" @click="redirectToEcommerce(productStore.currentProductDetail.store.ecommerce_link)"
+                      class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 flex-grow sm:flex-grow-0"
+                    >
+                      Kunjungi Toko
+                    </button>
+                    <span v-else class="px-6 py-3 text-gray-500 dark:text-gray-400 text-sm italic flex-grow sm:flex-grow-0 flex items-center justify-center">
+                      Link E-commerce tidak tersedia.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else-if="!productStore.loading && !productStore.error" class="flex-grow flex items-center justify-center py-12 text-lg text-gray-600 dark:text-gray-400">
+              Produk tidak ditemukan.
+            </div>
           </div>
-          <div class="md:w-1/2 p-4 md:p-8 flex flex-col justify-center">
-            <span class="text-sm text-gray-500 dark:text-gray-400 mb-2">{{ productStore.currentProductDetail.category || 'Tidak Berkategori' }}</span>
-            <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white mb-4">{{ productStore.currentProductDetail.name }}</h1>
-            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-6">{{ formatRupiah(productStore.currentProductDetail.price) }}</p>
-            <p class="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">{{ productStore.currentProductDetail.description }}</p>
-
-            <div class="flex items-center justify-between mb-4">
-              <span :class="[
-                'px-3 py-1 text-sm font-semibold rounded-full',
-                productStore.currentProductDetail.status === 'active' ? 'bg-green-100 text-green-800' :
-                productStore.currentProductDetail.status === 'pending_review' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'
-              ]">
-                Status: {{ formatStatus(productStore.currentProductDetail.status) }}
-              </span>
-            </div>
-
-            <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
-              <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Informasi Penjual</h2>
-              <p v-if="productStore.currentProductDetail.created_by_user" class="text-gray-700 dark:text-gray-300">
-                <span class="font-semibold">Dibuat Oleh:</span> {{ productStore.currentProductDetail.created_by_user.first_name || productStore.currentProductDetail.created_by_user.username || 'Tidak Diketahui' }}
-              </p>
-              <p v-else class="text-gray-700 dark:text-gray-300">
-                  <span class="font-semibold">Dibuat Oleh:</span> Tidak Diketahui
-              </p>
-
-              <p v-if="productStore.currentProductDetail.store" class="text-gray-700 dark:text-gray-300 mt-1">
-                <span class="font-semibold">Toko:</span> {{ productStore.currentProductDetail.store.store_name }}
-              </p>
-              <p v-if="productStore.currentProductDetail.store?.contact_whatsapp" class="text-gray-700 dark:text-gray-300 mt-1">
-                <span class="font-semibold">WhatsApp:</span> <a :href="`https://wa.me/${productStore.currentProductDetail.store.contact_whatsapp}`" target="_blank" class="text-blue-500 hover:underline">{{ productStore.currentProductDetail.store.contact_whatsapp }}</a>
-              </p>
-              <p v-if="productStore.currentProductDetail.store?.e_commerce_link" class="text-gray-700 dark:text-gray-300 mt-1">
-                <span class="font-semibold">Link E-commerce:</span> <a :href="productStore.currentProductDetail.store.e_commerce_link" target="_blank" class="text-blue-500 hover:underline">{{ productStore.currentProductDetail.e_commerce_link }}</a>
-              </p>
-              <p v-else-if="productStore.currentProductDetail.created_by_user && productStore.currentProductDetail.created_by_user.role === 'umkm' && !productStore.currentProductDetail.store" class="text-gray-700 dark:text-gray-300 mt-1">
-                UMKM ini belum memiliki profil toko yang lengkap.
-              </p>
-            </div>
-
-            <div class="mt-8 flex gap-4">
-              <button
-                  @click="redirectToWhatsApp(productStore.currentProductDetail.store?.contact_whatsapp)"
-                  class="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700"
-              >
-                Hubungi Penjual
-              </button>
-            </div>
-          </div>
-        </div>
-        <div v-else-if="!productStore.loading && !productStore.error" class="text-center text-gray-600 dark:text-gray-400 py-12 text-lg">
-          Produk tidak ditemukan.
-        </div>
+        </transition>
       </div>
-    </div>
+    </transition>
     </div>
 </template>
 
@@ -225,12 +231,32 @@ const formatStatus = (status) => {
   }
 };
 
-const redirectToWhatsApp = (whatsappNumber) => {
+const redirectToWhatsApp = (whatsappNumber, productName) => {
   if (whatsappNumber) {
-    window.open(`https://wa.me/${whatsappNumber}`, '_blank');
+    // Pesan default yang lebih informatif
+    const message = encodeURIComponent(`Halo, saya tertarik dengan produk "${productName}" yang saya lihat di UMKM Connect. Bisakah Anda memberikan informasi lebih lanjut?`);
+    window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
   } else {
-    alert('Nomor WhatsApp tidak tersedia.');
+    alert('Nomor WhatsApp penjual tidak tersedia.');
   }
+};
+
+const redirectToEcommerce = (url) => {
+  if (url) {
+    const formattedUrl = formatLink(url);
+    window.open(formattedUrl, '_blank');
+  } else {
+    alert('Link E-commerce tidak tersedia.');
+  }
+};
+
+// Pastikan fungsi formatLink tetap ada
+const formatLink = (url) => {
+  if (!url) return '';
+  if (!/^https?:\/\//i.test(url)) {
+    return 'http://' + url;
+  }
+  return url;
 };
 
 onMounted(() => {
@@ -257,5 +283,53 @@ select {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Transitions for overlay */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-active, .slide-up-leave-active {
+  transition: all 0.3s ease-out;
+}
+.slide-up-enter-from, .slide-up-leave-to {
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+/* Custom Scrollbar for the overlay content */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Light gray track */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #888; /* Darker gray thumb */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555; /* Even darker gray on hover */
+}
+
+/* Dark mode scrollbar */
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: #333; /* Dark track for dark mode */
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #666; /* Lighter thumb for dark mode */
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #888; /* Even lighter thumb on hover */
 }
 </style>

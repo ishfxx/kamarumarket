@@ -1,11 +1,8 @@
-
 <template>
   <AdminLayout>
     <Breadcrumb :pageTitle="pageTitle" :breadcrumbItems="breadcrumbItems" />
 
     <div class="px-6 py-8 dark:bg-gray-900 min-h-screen">
-      <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Manajemen Produk UMKM Saya</h1>
-
       <div v-if="productStore.loading" class="text-center text-gray-600 dark:text-gray-400">
         Memuat produk Anda...
       </div>
@@ -36,6 +33,8 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nama Produk</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Harga</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Kategori</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Kontak WA</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Link E-commerce</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Aksi</th>
               </tr>
@@ -43,11 +42,16 @@
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               <tr v-for="product in productStore.umkmProducts" :key="product.id">
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <img :src="product.image_url || '/images/default-product.jpg'" alt="Produk" class="w-16 h-16 object-cover rounded-md">
+                  <img :src="product.image_url || '/images/default-product.jpg'" :alt="product.name" class="w-16 h-16 object-cover rounded-md">
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ product.name }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatRupiah(product.price) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ product.category || '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ product.contact_wa || '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <a v-if="product.ecommerce_link" :href="product.ecommerce_link" target="_blank" class="text-blue-500 hover:underline">Link</a>
+                  <span v-else>-</span>
+                </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span :class="[
                     'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
@@ -69,7 +73,7 @@
       </div>
     </div>
 
-    <div v-if="showProductModal" class="fixed inset-0 md-blur backdrop-blur-md overflow-y-auto h-full w-full flex items-center justify-center z-50">
+    <div v-if="showProductModal" class="fixed inset-0 md-blur dropset-blur-md backdrop-blur-sm overflow-y-auto h-full w-full flex items-center justify-center z-50">
       <div class="relative p-8 bg-white dark:bg-gray-800 w-full max-w-lg mx-auto rounded-lg shadow-lg">
         <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">{{ isEditMode ? 'Edit Produk' : 'Tambah Produk Baru' }}</h3>
         <form @submit.prevent="saveProduct">
@@ -86,12 +90,20 @@
             <input type="number" id="productPrice" v-model.number="currentProduct.price" required min="0" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
           </div>
           <div class="mb-4">
-          <label for="productCategory" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Kategori</label>
-          <select id="productCategory" v-model="currentProduct.category" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-            <option value="" disabled>Pilih Kategori</option>
-            <option v-for="categoryOption in categories" :key="categoryOption" :value="categoryOption">{{ categoryOption }}</option>
-          </select>
-        </div>
+            <label for="productCategory" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Kategori</label>
+            <select id="productCategory" v-model="currentProduct.category" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              <option value="" disabled>Pilih Kategori</option>
+              <option v-for="categoryOption in categories" :key="categoryOption" :value="categoryOption">{{ categoryOption }}</option>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label for="contactWa" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Kontak WhatsApp</label>
+            <input type="text" id="contactWa" v-model="currentProduct.contact_wa" placeholder="Contoh: 6281234567890" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+          </div>
+          <div class="mb-6">
+            <label for="ecommerceLink" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Link E-commerce (Opsional)</label>
+            <input type="url" id="ecommerceLink" v-model="currentProduct.ecommerce_link" placeholder="Contoh: https://tokopedia.com/produk-saya" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+          </div>
           <div class="mb-6">
             <label for="productImage" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Gambar Produk</label>
             <input type="file" id="productImage" accept="image/*" @change="handleImageUpload" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
@@ -138,10 +150,11 @@ const currentProduct = ref({
   name: '',
   description: '',
   price: 0,
-  // stock: 0, // Hapus stock dari sini
   category: '',
   image_url: '',
-  status: 'pending_review'
+  status: 'pending_review',
+  contact_wa: '', // NEW
+  ecommerce_link: '', // NEW
 });
 const productImageFile = ref<File | null>(null);
 
@@ -181,10 +194,11 @@ const openAddProductModal = () => {
     name: '',
     description: '',
     price: 0,
-    // stock: 0, // Hapus stock dari sini
     category: '',
     image_url: '',
-    status: 'pending_review'
+    status: 'pending_review',
+    contact_wa: '', // NEW
+    ecommerce_link: '', // NEW
   };
   productImageFile.value = null;
   showProductModal.value = true;
@@ -192,7 +206,12 @@ const openAddProductModal = () => {
 
 const openEditProductModal = (product: any) => {
   isEditMode.value = true;
-  currentProduct.value = { ...product };
+  // Pastikan untuk menyalin contact_wa dan ecommerce_link dari produk yang ada
+  currentProduct.value = {
+    ...product,
+    contact_wa: product.contact_wa || '', // Pastikan tidak undefined
+    ecommerce_link: product.ecommerce_link || '', // Pastikan tidak undefined
+  };
   productImageFile.value = null;
   showProductModal.value = true;
 };
@@ -258,10 +277,11 @@ const saveProduct = async () => {
     name: currentProduct.value.name,
     description: currentProduct.value.description,
     price: currentProduct.value.price,
-    // stock: currentProduct.value.stock, // Hapus stock dari sini
     category: currentProduct.value.category,
     image_url: imageUrl,
     status: currentProduct.value.status,
+    contact_wa: currentProduct.value.contact_wa || null, // NEW: Pastikan null jika kosong
+    ecommerce_link: currentProduct.value.ecommerce_link || null, // NEW: Pastikan null jika kosong
   };
 
   let success = false;

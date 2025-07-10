@@ -149,11 +149,11 @@
       </div>
     </div>
 
-    <div v-if="showDeleteConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 backdrop-blur-md">
+    <div v-if="showDeleteConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center md-blur p-4 backdrop-blur-md">
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Konfirmasi Hapus Produk</h3>
         <p class="text-gray-700 dark:text-gray-300 mb-6">
-          Anda yakin ingin menghapus produk **{{ productToDeleteName }}**? Aksi ini tidak dapat dibatalkan.
+          Anda yakin ingin menghapus produk <b>{{ productToDeleteName }}</b>? Aksi ini tidak dapat dibatalkan.
         </p>
         <div class="flex justify-end gap-3">
           <button

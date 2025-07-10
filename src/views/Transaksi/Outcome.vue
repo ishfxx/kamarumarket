@@ -4,8 +4,6 @@
     <Breadcrumb :pageTitle="pageTitle" :breadcrumbItems="breadcrumbItems" />
 
     <div class="px-6 py-8 dark:bg-gray-900 min-h-screen">
-      <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Pengeluaran</h1>
-
       <div v-if="bookkeepingStore.loading" class="text-center text-gray-600 dark:text-gray-400">
         Memuat data pengeluaran...
       </div>
@@ -59,7 +57,7 @@
               <tr v-for="transaksi in bookkeepingStore.expenseTransactions" :key="transaksi.id">
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ formatDate(transaksi.date) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ transaksi.description }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400 font-semibold">Rp {{ formatRupiah(transaksi.amount) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400 font-semibold">{{ formatRupiah(transaksi.amount) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button @click="editTransaction(transaksi)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-600 mr-3">Edit</button>
                   <button @click="confirmDeleteTransaction(transaksi.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-600">Hapus</button>
@@ -71,7 +69,7 @@
       </div>
     </div>
 
-    <div v-if="showEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+    <div v-if="showEditModal" class="fixed inset-0 md-blur backdrop-blur-md overflow-y-auto h-full w-full flex items-center justify-center z-50">
       <div class="relative p-8 bg-white dark:bg-gray-800 w-full max-w-lg mx-auto rounded-lg shadow-lg">
         <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Pengeluaran</h3>
         <form @submit.prevent="saveEditedTransaction">

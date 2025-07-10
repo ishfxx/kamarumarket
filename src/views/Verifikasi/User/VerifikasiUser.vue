@@ -3,8 +3,6 @@
     <Breadcrumb :pageTitle="pageTitle" :breadcrumbItems="breadcrumbItems" />
 
     <div class="px-6 py-8 dark:bg-gray-900 min-h-screen">
-      <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Manajemen Pengguna</h1>
-
       <div v-if="userStore.loading" class="text-center text-gray-600 dark:text-gray-400">
         Memuat daftar pengguna...
       </div>
@@ -38,7 +36,7 @@
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               <tr v-if="userStore.allUsers.length === 0 && !userStore.loading">
                   <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
-                      Tidak ada pengguna ditemukan.
+                    Tidak ada pengguna ditemukan.
                   </td>
               </tr>
               <tr v-for="user in userStore.allUsers" :key="user.id">
@@ -78,12 +76,35 @@
         </div>
       </div>
     </div>
+
+    <div v-if="showDeleteConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center md-blur p-4 backdrop-blur-md">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Konfirmasi Hapus Pengguna</h3>
+        <p class="text-gray-700 dark:text-gray-300 mb-6">
+          Anda yakin ingin menghapus pengguna <b>{{ userToDeleteName }}</b>? Aksi ini tidak dapat dibatalkan.
+        </p>
+        <div class="flex justify-end gap-3">
+          <button
+            @click="cancelDeleteProduct"
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            Batal
+          </button>
+          <button
+            @click="deleteUserConfirmed"
+            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+          >
+            Hapus
+          </button>
+        </div>
+      </div>
+    </div>
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { useUserStore } from '@/store/userStore'; // Menggunakan @/stores/userStore
+import { useUserStore } from '@/store/userStore';
 import { useRouter } from 'vue-router';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
@@ -96,6 +117,11 @@ const breadcrumbItems = ref([
   { label: 'Admin', path: '/admin' },
   { label: 'Manajemen Pengguna', path: '/admin/users' }
 ]);
+
+// State untuk modal konfirmasi penghapusan
+const showDeleteConfirmModal = ref(false);
+const userToDeleteId = ref<string | null>(null);
+const userToDeleteName = ref('');
 
 // Fungsi untuk mengkapitalisasi huruf pertama dari role
 const formatRole = (role: string) => {
@@ -119,21 +145,35 @@ const handleRoleChange = async (userId: string, newRole: string) => {
   }
 };
 
-// Fungsi untuk konfirmasi dan menghapus user
-const confirmDelete = async (user: any) => {
+// Fungsi untuk menampilkan modal konfirmasi penghapusan
+const confirmDelete = (user: any) => {
   if (user.id === userStore.user?.id) {
     alert('Anda tidak bisa menghapus akun Anda sendiri.');
     return;
   }
+  userToDeleteId.value = user.id;
+  userToDeleteName.value = `${user.first_name} ${user.last_name} (${user.username})`;
+  showDeleteConfirmModal.value = true;
+};
 
-  if (confirm(`Apakah Anda yakin ingin menghapus pengguna ${user.username} (${user.email})? Tindakan ini tidak dapat dibatalkan.`)) {
-    const success = await userStore.deleteUser(user.id);
+// Fungsi untuk membatalkan penghapusan (menutup modal)
+const cancelDeleteProduct = () => {
+  showDeleteConfirmModal.value = false;
+  userToDeleteId.value = null;
+  userToDeleteName.value = '';
+};
+
+// Fungsi untuk melakukan penghapusan setelah konfirmasi
+const deleteUserConfirmed = async () => {
+  if (userToDeleteId.value) {
+    const success = await userStore.deleteUser(userToDeleteId.value);
     if (success) {
-      alert('Pengguna berhasil dihapus dari profil.');
+      alert('Pengguna berhasil dihapus.');
       // userStore.allUsers sudah difilter di userStore.deleteUser
     } else {
       alert('Gagal menghapus pengguna: ' + (userStore.error || 'Terjadi kesalahan.'));
     }
+    cancelDeleteProduct(); // Tutup modal setelah aksi
   }
 };
 
