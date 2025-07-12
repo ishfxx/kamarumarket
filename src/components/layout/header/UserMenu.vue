@@ -79,8 +79,6 @@ const userStore = useUserStore();
 // Definisikan semua item menu yang mungkin ada, beserta role yang diizinkan
 const allMenuItems = [
   { href: '/profile', icon: UserCircleIcon, text: 'Edit profile', roles: ['admin', 'umkm', 'user'] }, // Menambahkan 'user' role jika ingin user biasa bisa mengedit profil
-  { href: '/account-settings', icon: SettingsIcon, text: 'Account settings', roles: ['admin', 'umkm', 'user'] }, // Menambahkan 'user' role
-  { href: '/support', icon: InfoCircleIcon, text: 'Support', roles: ['admin', 'user', 'umkm'] }, // Menambahkan 'umkm' role
 ];
 
 // Computed property untuk memfilter menu item berdasarkan role pengguna

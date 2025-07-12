@@ -14,7 +14,7 @@
                 <img width="{231}" height="{48}" src="@/assets/images/kapas_madya.png" alt="Logo" />
               </router-link>
               <p class="text-center text-gray-200 dark:text-white/60 text-7xl font-sans">
-                BUKAPAS
+                KAMARU
               </p>
             </div>
           </div>

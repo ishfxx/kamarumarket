@@ -62,8 +62,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Nama Toko</h3>
-                <p class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{{ productStore.myStore?.store_name || 'Belum diatur' }}</p>
-                <button v-if="!productStore.myStore" @click="createUmkmStore" class="mt-2 px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600">Buat Toko Sekarang</button>
+                <p class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{{ userStore.myStore?.store_name || 'Belum diatur' }}</p>
+                <button v-if="!userStore.myStore" @click="createUmkmStore" class="mt-2 px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600">Buat Toko Sekarang</button>
             </div>
             <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Total Produk Anda</h3>
@@ -213,46 +213,57 @@ const latestUmkmProducts = computed(() => {
 });
 
 const createUmkmStore = async () => {
-    if (confirm('Anda belum memiliki toko. Apakah Anda ingin membuat toko sekarang?')) {
-        const storeName = prompt('Masukkan Nama Toko Anda:');
-        if (storeName && storeName.trim()) {
-            const success = await productStore.createStore({ store_name: storeName.trim() });
-            if (success) {
-                alert('Toko berhasil dibuat!');
-            } else {
-                alert('Gagal membuat toko: ' + (productStore.error || 'Terjadi kesalahan.'));
-            }
-        } else if (storeName !== null) {
-            alert('Nama toko tidak boleh kosong.');
-        }
+  if (userStore.getUserRole !== 'umkm') {
+    alert('Hanya pengguna dengan role UMKM yang dapat membuka toko.');
+    return;
+  }
+
+  if (confirm('Anda belum memiliki toko. Apakah Anda ingin membuat toko sekarang?')) {
+    const storeName = prompt('Masukkan Nama Toko Anda:');
+    if (storeName && storeName.trim()) {
+      // Panggil createStore dari productStore
+      const success = await productStore.createStore({ store_name: storeName.trim() });
+      if (success) {
+        alert('Toko berhasil dibuat!');
+        // userStore.myStore sudah otomatis diupdate oleh productStore.createStore
+      } else {
+        alert('Gagal membuat toko: ' + (productStore.error || 'Terjadi kesalahan.'));
+      }
+    } else if (storeName !== null) {
+      alert('Nama toko tidak boleh kosong.');
     }
+  }
 };
+
 
 // --- onMounted Logic ---
 onMounted(async () => {
-  await userStore.initializeUser();
+  await userStore.initializeUser(); // Pastikan user diinisialisasi pertama
 
-  if (userStore.isLoggedIn) {
-    if (userStore.isAdmin) {
-      await userStore.fetchAllUsers();
-      // Admin fetch SEMUA produk (status: undefined) untuk menghitung pending
-      await productStore.fetchProducts({ status: undefined });
-      const uniqueCreatorIds = [...new Set((productStore.products || []).map(p => p.created_by))].filter(Boolean);
-      await fetchCreators(uniqueCreatorIds);
-    } else if (userStore.getUserRole === 'umkm') {
-      // Pastikan userStore.user tersedia sebelum memanggil productStore.fetchUmkmProducts
-      if (userStore.user?.id) {
-          await productStore.fetchUmkmProducts(userStore.user.id);
-          await productStore.fetchUserStore(userStore.user.id);
-      } else {
-          console.error("Dashboard: User ID not available for UMKM fetching.");
-          // Handle case where user.id is null/undefined for UMKM
-          // Maybe redirect or show a specific message.
-      }
-    }
-  } else {
+  if (!userStore.isLoggedIn) {
     alert('Anda harus login untuk mengakses dashboard.');
-    router.push('/signin'); // Mengarahkan ke signin
+    router.push('/signin'); // Mengarahkan ke signin jika tidak login
+    return; // Hentikan eksekusi lebih lanjut
+  }
+
+  // Jika sudah login, lanjutkan berdasarkan peran
+  if (userStore.isAdmin) {
+    await userStore.fetchAllUsers();
+    // Admin fetch SEMUA produk (status: undefined) untuk menghitung pending
+    await productStore.fetchProducts({ status: 'all' }); // Ubah menjadi 'all' agar admin bisa melihat semua status
+    const uniqueCreatorIds = [...new Set((productStore.products || []).map(p => p.created_by))].filter(Boolean);
+    await fetchCreators(uniqueCreatorIds);
+  } else if (userStore.getUserRole === 'umkm') {
+    if (userStore.user?.id) {
+        // Ambil produk UMKM milik user
+        await productStore.fetchUmkmProducts(userStore.user.id);
+        // Ambil data toko UMKM milik user
+        await userStore.fetchUserStore(userStore.user.id); // Panggil fetchUserStore dari userStore
+    } else {
+        console.error("Dashboard: User ID not available for UMKM fetching.");
+        // Handle case where user.id is null/undefined for UMKM
+        // Maybe redirect or show a specific message.
+    }
   }
 });
 </script>

@@ -47,11 +47,12 @@ interface Store {
   created_at: string;
 }
 
+
 export const useProductStore = defineStore('product', {
   state: () => ({
     products: [] as Product[], // Daftar produk untuk marketplace umum dan admin
     umkmProducts: [] as Product[], // Daftar produk UMKM spesifik
-    userStore: null as Store | null, // Toko milik user yang sedang login
+    // userStore: null as Store | null, // HAPUS INI - data toko akan dipegang oleh userStore
     loading: false,
     error: null as string | null,
     currentProductDetail: null as Product | null, // Untuk halaman detail produk
@@ -134,6 +135,7 @@ export const useProductStore = defineStore('product', {
       }
     },
 
+
     // --- Fetch Single Product by ID ---
     async fetchProductById(productId: string) {
       this.loading = true;
@@ -170,7 +172,7 @@ export const useProductStore = defineStore('product', {
 
     // --- Create a Product ---
     async createProduct(productData: { name: string; description: string; price: number; image_url?: string; category?: string; status?: 'active' | 'inactive' | 'pending_review'; store_id?: string | null; contact_wa?: string; ecommerce_link?: string }) {
-      const userStore = useUserStore();
+      const userStore = useUserStore(); // Dapatkan instance userStore
       if (!userStore.user) {
         this.error = 'Anda harus login untuk membuat produk.';
         return false;
@@ -191,8 +193,8 @@ export const useProductStore = defineStore('product', {
           category: productData.category,
           status: productData.status || (userStore.profile?.role === 'admin' ? 'active' : 'pending_review'),
           created_by: userStore.user.id,
-          // userStore.myStore?.id digunakan untuk memastikan ID toko UMKM terkait
-          store_id: userStore.profile?.role === 'umkm' ? userStore.myStore?.id || null : null, // Menggunakan userStore.myStore
+          // Menggunakan userStore.myStore yang sudah diperbarui dari userStore
+          store_id: userStore.profile?.role === 'umkm' ? userStore.myStore?.id || null : null,
           contact_wa: productData.contact_wa,
           ecommerce_link: productData.ecommerce_link,
         };
@@ -356,7 +358,7 @@ export const useProductStore = defineStore('product', {
 
     // --- Create UMKM Store ---
     async createStore(storeData: { store_name: string; store_description?: string; contact_whatsapp?: string; e_commerce_link?: string }) {
-      const userStore = useUserStore();
+      const userStore = useUserStore(); // Dapatkan instance userStore
       this.loading = true;
       this.error = null;
       if (!userStore.user || userStore.profile?.role !== 'umkm') {
@@ -393,7 +395,8 @@ export const useProductStore = defineStore('product', {
       }
     },
 
-    // --- Fetch User's Store ---
+    // --- Fetch User's Store (INI SEBAIKNYA DIPINDAH KE userStore.ts) ---
+    // Jika Anda ingin tetap memilikinya di sini, pastikan untuk memperbarui userStore.myStore
     async fetchUserStore(userId: string) {
       this.loading = true;
       this.error = null;
@@ -407,14 +410,13 @@ export const useProductStore = defineStore('product', {
         if (error && error.code !== 'PGRST116') {
           console.error('ProductStore: Error fetching user store:', error.message);
           this.error = 'Gagal memuat data toko: ' + error.message;
-          // this.userStore = null; // Ini adalah productStore.userStore, lebih baik userStore.myStore
           return false;
         }
 
-        this.userStore = data as Store || null; // Update local state jika Anda masih menggunakannya
         // Ini adalah tempat Anda mungkin ingin memperbarui state di userStore juga
-        // const userStore = useUserStore();
-        // userStore.setMyStore(data as Store || null); // Jika userStore memiliki setter untuk myStore
+        const userStore = useUserStore();
+        userStore.setMyStore(data as Store || null); // Jika userStore memiliki setter untuk myStore
+        // this.userStore = data as Store || null; // HAPUS ATAU KOMENTARI INI jika sudah tidak menggunakan state lokal userStore di productStore
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat memuat toko.';
@@ -427,7 +429,7 @@ export const useProductStore = defineStore('product', {
 
     // --- Update User's Store ---
     async updateStore(storeId: string, storeData: Partial<Store>) { // Menggunakan Partial<Store>
-      const userStore = useUserStore();
+      const userStore = useUserStore(); // Dapatkan instance userStore
       this.loading = true;
       this.error = null;
       if (!userStore.user || (userStore.profile?.role !== 'umkm' && userStore.profile?.role !== 'admin')) {
@@ -435,7 +437,7 @@ export const useProductStore = defineStore('product', {
         return false;
       }
       // Pastikan UMKM hanya bisa memperbarui tokonya sendiri
-      if (userStore.profile?.role === 'umkm' && userStore.user.id !== this.userStore?.user_id) { // Menggunakan user_id dari userStore lokal atau dari userStore pinia
+      if (userStore.profile?.role === 'umkm' && userStore.user.id !== userStore.myStore?.user_id) { // Menggunakan userStore.myStore
           this.error = 'Anda hanya bisa memperbarui toko Anda sendiri.';
           return false;
       }
@@ -454,7 +456,7 @@ export const useProductStore = defineStore('product', {
           this.error = 'Gagal memperbarui toko: ' + error.message;
           return false;
         }
-        this.userStore = data[0] as Store; // Update local state jika Anda masih menggunakannya
+        // this.userStore = data[0] as Store; // HAPUS ATAU KOMENTARI INI jika sudah tidak menggunakan state lokal userStore di productStore
         userStore.setMyStore(data[0] as Store); // Update userStore.myStore
         return true;
       } catch (err: any) {
@@ -469,7 +471,7 @@ export const useProductStore = defineStore('product', {
   getters: {
     allMarketplaceProducts: (state) => state.products,
     myUmkmProducts: (state) => state.umkmProducts,
-    myStore: (state) => state.userStore, // Getter untuk toko di productStore
+    // myStore: (state) => state.userStore, // HAPUS GETTER INI KARENA SUDAH DI userStore
     // Anda mungkin juga memiliki getter serupa di userStore untuk toko pengguna
   }
 });

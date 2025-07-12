@@ -19,6 +19,12 @@ const router = createRouter({
       component: () => import('@/views/Auth/Signup.vue'),
       meta: { requiresAuth: false, layout: 'FullScreenLayout' }
     },
+    {
+      path: '/email-verification',
+      name: 'EmailVerif',
+      component: () => import('@/views/Auth/EmailVerification.vue'),
+      meta: { requiresAuth: false, layout: 'FullScreenLayout' }
+    },
 
     // --- 2. Rute Publik / Umum (Tidak memerlukan autentikasi) ---
     {
