@@ -40,11 +40,11 @@
         Tidak ada produk ditemukan. Coba kategori atau kata kunci lain.
       </div>
 
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-7">
+      <div v-else class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-7">
         <div
           v-for="produk in productStore.products"
           :key="produk.id"
-          @click="openProductDetailOverlay(produk.id)" class="bg-white shadow-md rounded-xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-103 hover:shadow-lg group dark:bg-gray-800"
+          @click="openProductDetailOverlay(produk.id)" class="bg-white shadow-md rounded-l overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-103 hover:shadow-lg group dark:bg-gray-800"
         >
           <div class="relative w-full h-48 overflow-hidden">
             <img
@@ -110,6 +110,8 @@
                     <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Informasi Penjual</h2>
                     <p v-if="productStore.currentProductDetail.created_by_user" class="text-gray-700 dark:text-gray-300 text-sm sm:text-base">
                       <span class="font-semibold">Dibuat Oleh:</span> {{ productStore.currentProductDetail.created_by_user.first_name || productStore.currentProductDetail.created_by_user.username || 'Tidak Diketahui' }}
+                        <span class="ml-1"> ( {{ productStore.currentProductDetail.contact_wa }} )</span>
+
                     </p>
                     <p v-else class="text-gray-700 dark:text-gray-300 text-sm sm:text-base">
                         <span class="font-semibold">Dibuat Oleh:</span> Tidak Diketahui
@@ -232,14 +234,19 @@ const formatStatus = (status) => {
 };
 
 const redirectToWhatsApp = (whatsappNumber, productName) => {
-  if (whatsappNumber) {
-    // Pesan default yang lebih informatif
+  // fallback: dari store.contact_whatsapp atau langsung dari produk
+  const number = productStore.currentProductDetail.store?.contact_whatsapp
+              || productStore.currentProductDetail.contact_wa;
+
+  if (number) {
     const message = encodeURIComponent(`Halo, saya tertarik dengan produk "${productName}" yang saya lihat di UMKM Connect. Bisakah Anda memberikan informasi lebih lanjut?`);
-    window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${number}?text=${message}`, '_blank');
   } else {
     alert('Nomor WhatsApp penjual tidak tersedia.');
   }
 };
+
+
 
 const redirectToEcommerce = (url) => {
   if (url) {

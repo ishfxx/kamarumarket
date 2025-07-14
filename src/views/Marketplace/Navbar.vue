@@ -1,20 +1,29 @@
 <template>
-  <nav class="bg-emerald-500 p-4 shadow-lg">
+  <nav class="bg-emerald-500 px-4 py-3 shadow-lg ">
     <div class="container mx-auto flex justify-between items-center">
+      <!-- Logo dan Nama -->
       <div class="flex items-center space-x-3">
-        <img src="@/assets/images/kapas_madya.png" alt="KAMARU Logo" class="h-10 w-10 rounded-full object-cover shadow-sm" />
-        <router-link to="/" class="text-white text-2xl font-extrabold tracking-wide">
+        <img
+          src="@/assets/images/kapas_madya.png"
+          alt="KAMARU Logo"
+          class="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover shadow-sm"
+        />
+        <router-link
+          to="/"
+          class="text-white text-lg sm:text-2xl font-extrabold tracking-wide"
+        >
           KAMARU Market
         </router-link>
       </div>
 
       <div>
         <button
-          class="px-5 py-2 bg-white text-emerald-600 text-base font-semibold rounded-full hover:bg-emerald-50 hover:text-emerald-700 transition duration-300 ease-in-out transform hover:scale-105"
+          class="bg-transparent border-none text-white hover:drop-shadow-[0_0_6px_#ffffff] hover:font-bold transition duration-200"
           @click="goToSignIn"
         >
           Sign In
         </button>
+
       </div>
     </div>
   </nav>

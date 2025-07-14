@@ -73,7 +73,7 @@
       </div>
     </div>
 
-    <div v-if="showProductModal" class="fixed inset-0 md-blur dropset-blur-md backdrop-blur-sm overflow-y-auto h-full w-full flex items-center justify-center z-50">
+    <div v-if="showProductModal" class="fixed inset-0 pt-[80px] md-blur dropset-blur-md backdrop-blur-sm overflow-y-auto h-full w-full flex items-start justify-center z-[99999]">
       <div class="relative p-8 bg-white dark:bg-gray-800 w-full max-w-lg mx-auto rounded-lg shadow-lg">
         <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">{{ isEditMode ? 'Edit Produk' : 'Tambah Produk Baru' }}</h3>
         <form @submit.prevent="saveProduct">
