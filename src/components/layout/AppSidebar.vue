@@ -265,15 +265,6 @@ const allMenuGroups = [
         ],
       },
       {
-        icon: PieChartIcon,
-        name: "Laporan Keuangan",
-        roles: ['umkm'],
-        subItems: [
-          { name: "Laba Rugi", path: "/labarugi", roles: ['umkm'] },
-          { name: "Arus Kas", path: "/aruskas", roles: ['umkm'] },
-        ],
-      },
-      {
         icon: BoxCubeIcon,
         name: "Market Place",
         roles: ['umkm'],

@@ -52,6 +52,8 @@ export const useProductStore = defineStore('product', {
   state: () => ({
     products: [] as Product[], // Daftar produk untuk marketplace umum dan admin
     umkmProducts: [] as Product[], // Daftar produk UMKM spesifik
+    allProducts: [] as Product[], // Tambahkan ini
+
     // userStore: null as Store | null, // HAPUS INI - data toko akan dipegang oleh userStore
     loading: false,
     error: null as string | null,
@@ -89,7 +91,9 @@ export const useProductStore = defineStore('product', {
           return false;
         }
 
-        this.products = data as Product[] || []; // Pastikan tipe data Product[]
+        this.products = data as Product[] || [];
+        this.allProducts = data as Product[] || [];
+
         return true;
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat memuat produk.';

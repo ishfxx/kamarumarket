@@ -7,7 +7,7 @@
       <div v-if="bookkeepingStore.loading" class="text-center text-gray-600 dark:text-gray-400">
         Memuat data pengeluaran...
       </div>
-      <div v-if="bookkeepingStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+      <div v-if="bookkeepingStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="showToast">
         <strong class="font-bold">Error:</strong>
         <span class="block sm:inline">{{ bookkeepingStore.error }}</span>
       </div>
@@ -106,7 +106,9 @@ import { useBookkeepingStore } from '@/store/bookkeepingStore';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
 import { useRouter } from 'vue-router';
+import { useToast } from '@/composables/useToast';
 
+const { showToast } = useToast();
 const userStore = useUserStore();
 const bookkeepingStore = useBookkeepingStore();
 const router = useRouter();
@@ -143,7 +145,7 @@ const formatDate = (dateString: string) => {
 
 const addTransaction = async () => {
   if (!userStore.user?.id) {
-    alert('User ID tidak ditemukan. Mohon login ulang.');
+    showToast('User ID tidak ditemukan. Mohon login ulang.');
     return;
   }
   const transactionData = {
@@ -156,7 +158,7 @@ const addTransaction = async () => {
 
   const success = await bookkeepingStore.createTransaction(transactionData);
   if (success) {
-    alert('Pengeluaran berhasil ditambahkan!');
+    showToast('Pengeluaran berhasil ditambahkan!');
     newTransaction.value = { date: new Date().toISOString().split('T')[0], amount: 0, description: '' };
   } else {
     // Error sudah diset di store
@@ -179,7 +181,7 @@ const saveEditedTransaction = async () => {
 
   const success = await bookkeepingStore.updateTransaction(editedTransaction.value.id, dataToUpdate);
   if (success) {
-    alert('Transaksi berhasil diperbarui!');
+    showToast('Transaksi berhasil diperbarui!');
     showEditModal.value = false;
   } else {
     // Error sudah diset di store
@@ -190,7 +192,7 @@ const confirmDeleteTransaction = async (id: string) => {
   if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
     const success = await bookkeepingStore.deleteTransaction(id);
     if (success) {
-      alert('Transaksi berhasil dihapus!');
+      showToast('Transaksi berhasil dihapus!');
     } else {
       // Error sudah diset di store
     }
@@ -204,7 +206,7 @@ onMounted(async () => {
     const umkmIdToFetch = userStore.profile?.role === 'umkm' ? userStore.user.id : undefined;
     await bookkeepingStore.fetchTransactions(umkmIdToFetch as string, 'pengeluaran'); // <<< PERBAIKAN: Menggunakan 'pengeluaran'
   } else {
-    alert('Anda tidak memiliki izin untuk mengakses halaman ini.');
+    showToast('Anda tidak memiliki izin untuk mengakses halaman ini.');
     router.push('/dashboard');
   }
 });

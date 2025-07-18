@@ -1,7 +1,6 @@
 // src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router';
 import { useUserStore } from '@/store/userStore'; // Pastikan path ini benar
-import ProductDetail from '@/views/Marketplace/ProductDetail.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -95,13 +94,6 @@ const router = createRouter({
       name: 'ManagementProduct',
       component: () => import('@/views/Admin/AdminProductManagement.vue'),
       meta: { requiresAuth: true, adminOnly: true, layout: 'AdminLayout' }
-    },
-    {
-      path: '/marketplace/product/:id', // Ini adalah rute detail produk
-      name: 'ProductDetail',
-      component: () => import('@/views/Marketplace/ProductDetail.vue'), // Pastikan path ini benar
-      meta: { requiresAuth: false, layout: 'AdminLayout'  }, // Detail produk bisa dilihat tanpa login
-      props: true
     },
 
     {

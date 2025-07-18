@@ -10,6 +10,13 @@
         >
           Refresh Produk
         </button>
+        <button
+          v-if="selectedProductIds.length > 0"
+          @click="deleteSelectedProducts"
+          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Hapus {{ selectedProductIds.length }} Produk yang Dipilih
+        </button>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end mb-8">
@@ -59,7 +66,7 @@
       <div v-if="productStore.loading" class="text-center text-gray-600 dark:text-gray-400 py-12 text-lg">
         Memuat produk...
       </div>
-      <div v-else-if="productStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+      <div v-else-if="productStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="showToast">
         <strong class="font-bold">Error:</strong>
         <span class="block sm:inline">{{ productStore.error }}</span>
       </div>
@@ -71,6 +78,9 @@
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
+              <th scope="col" class="px-6 py-3 text-left">
+                <input type="checkbox" v-model="selectAll" @change="toggleSelectAll" class="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out rounded dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-500 dark:ring-offset-gray-800 focus:ring-blue-500" />
+              </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
                 Gambar
               </th>
@@ -96,6 +106,9 @@
           </thead>
           <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
             <tr v-for="produk in productStore.products" :key="produk.id">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <input type="checkbox" :value="produk.id" v-model="selectedProductIds" class="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out rounded dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-500 dark:ring-offset-gray-800 focus:ring-blue-500" />
+              </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <img
                   :src="produk.image_url || '/images/default-product.jpg'"
@@ -152,8 +165,11 @@
     <div v-if="showDeleteConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center md-blur p-4 backdrop-blur-md">
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Konfirmasi Hapus Produk</h3>
-        <p class="text-gray-700 dark:text-gray-300 mb-6">
+        <p v-if="productToDeleteId" class="text-gray-700 dark:text-gray-300 mb-6">
           Anda yakin ingin menghapus produk <b>{{ productToDeleteName }}</b>? Aksi ini tidak dapat dibatalkan.
+        </p>
+        <p v-else-if="selectedProductIds.length > 0" class="text-gray-700 dark:text-gray-300 mb-6">
+          Anda yakin ingin menghapus <b>{{ selectedProductIds.length }}</b> produk yang dipilih? Aksi ini tidak dapat dibatalkan.
         </p>
         <div class="flex justify-end gap-3">
           <button
@@ -207,11 +223,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue'; // Tambahkan 'watch'
 import { useProductStore } from '@/store/productStore';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
+import { useToast } from '@/composables/useToast';
 
+const { showToast } = useToast();
 const productStore = useProductStore();
 
 const searchQuery = ref('');
@@ -226,12 +244,85 @@ const breadcrumbItems = ref([
 ]);
 
 const showDeleteConfirmModal = ref(false);
-const productToDeleteId = ref(null);
+const productToDeleteId = ref(null); // Ini akan tetap digunakan untuk hapus tunggal
 const productToDeleteName = ref('');
 
 const showEditStatusModal = ref(false);
 const productToEdit = ref(null);
 const newProductStatus = ref('');
+
+// --- Fitur Pilih Beberapa Produk ---
+const selectedProductIds = ref([]); // Array untuk menyimpan ID produk yang dipilih
+const selectAll = ref(false); // Status checkbox 'pilih semua'
+
+// Watcher untuk sinkronisasi selectAll dengan selectedProductIds
+watch(productStore.products, (newProducts) => {
+  // Jika tidak ada produk, set selectAll ke false
+  if (newProducts.length === 0) {
+    selectAll.value = false;
+  }
+  // Jika semua produk yang saat ini ditampilkan dipilih, set selectAll ke true
+  // Ini penting agar selectAll diperbarui ketika filter atau pencarian berubah
+  selectAll.value = newProducts.every(product => selectedProductIds.value.includes(product.id));
+});
+
+const toggleSelectAll = () => {
+  if (selectAll.value) {
+    selectedProductIds.value = productStore.products.map(produk => produk.id);
+  } else {
+    selectedProductIds.value = [];
+  }
+};
+
+const deleteSelectedProducts = async () => {
+  if (selectedProductIds.value.length === 0) {
+    showToast('Pilih setidaknya satu produk untuk dihapus.');
+    return;
+  }
+
+  // Tampilkan modal konfirmasi untuk penghapusan massal
+  productToDeleteId.value = null; // Reset single delete ID
+  productToDeleteName.value = 'produk yang dipilih'; // Ubah pesan untuk penghapusan massal
+  showDeleteConfirmModal.value = true;
+};
+
+const confirmMassDelete = async () => {
+  try {
+    // Anda perlu endpoint API baru di backend untuk menghapus banyak produk
+    // Asumsi ada aksi `deleteMultipleProducts` di productStore
+    const success = await productStore.deleteMultipleProducts(selectedProductIds.value);
+
+    if (success) {
+      showToast(`${selectedProductIds.value.length} produk berhasil dihapus!`);
+      selectedProductIds.value = []; // Bersihkan pilihan setelah penghapusan
+      selectAll.value = false; // Reset pilih semua
+      fetchProducts(); // Refresh daftar produk
+    } else {
+      showToast(`Gagal menghapus produk: ${productStore.error}`);
+    }
+  } catch (error) {
+    console.error("Error during mass delete:", error);
+    showToast("Terjadi kesalahan saat menghapus beberapa produk.");
+  } finally {
+    cancelDeleteProduct(); // Tutup modal konfirmasi
+  }
+};
+
+// Modifikasi fungsi deleteProduct untuk membedakan antara hapus tunggal dan massal
+const deleteProduct = async () => {
+  if (productToDeleteId.value) { // Hapus tunggal
+    const success = await productStore.deleteProduct(productToDeleteId.value);
+    if (success) {
+      showToast('Produk berhasil dihapus!');
+    } else {
+      showToast(`Gagal menghapus produk: ${productStore.error}`);
+    }
+    cancelDeleteProduct();
+  } else if (selectedProductIds.value.length > 0) { // Hapus massal jika productToDeleteId kosong tapi ada produk yang dipilih
+    await confirmMassDelete();
+  }
+};
+// --- Akhir Fitur Pilih Beberapa Produk ---
 
 const kategoriUnik = computed(() => {
   const categories = productStore.products.map(p => p.category).filter(Boolean);
@@ -265,17 +356,6 @@ const cancelDeleteProduct = () => {
   productToDeleteName.value = '';
 };
 
-const deleteProduct = async () => {
-  if (productToDeleteId.value) {
-    const success = await productStore.deleteProduct(productToDeleteId.value);
-    if (success) {
-      alert('Produk berhasil dihapus!');
-    } else {
-      alert(`Gagal menghapus produk: ${productStore.error}`);
-    }
-    cancelDeleteProduct();
-  }
-};
 
 const openEditProductStatusModal = (product) => {
   productToEdit.value = product;
@@ -293,9 +373,9 @@ const updateProductStatus = async () => {
   if (productToEdit.value && newProductStatus.value) {
     const success = await productStore.updateProduct(productToEdit.value.id, { status: newProductStatus.value });
     if (success) {
-      alert('Status produk berhasil diperbarui!');
+      showToast('Status produk berhasil diperbarui!');
     } else {
-      alert(`Gagal memperbarui status: ${productStore.error}`);
+      showToast(`Gagal memperbarui status: ${productStore.error}`);
     }
     cancelEditStatus();
   }
@@ -320,16 +400,3 @@ onMounted(() => {
   fetchProducts();
 });
 </script>
-
-<style scoped>
-select {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  padding-right: 2.5rem;
-}
-
-table {
-  width: 100%;
-}
-</style>

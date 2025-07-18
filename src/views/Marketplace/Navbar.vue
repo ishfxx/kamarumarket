@@ -18,7 +18,7 @@
 
       <div>
         <button
-          class="bg-transparent border-none text-white hover:drop-shadow-[0_0_6px_#ffffff] hover:font-bold transition duration-200"
+          class="bg-transparent border-none text-white hover:drop-shadow-[0_0_6px_#ffffff] hover:font-bold transition duration-200 text-xl"
           @click="goToSignIn"
         >
           Sign In

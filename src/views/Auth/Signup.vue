@@ -125,6 +125,22 @@
                   </div>
                   <div>
                     <label
+                      for="phone"
+                      class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 font-sans"
+                    >
+                      Nomor HP
+                    </label>
+                    <input
+                      v-model="phone"
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      placeholder="Contoh: 081234567890"
+                      class="dark:bg-gray-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-emerald-300 focus:outline-none focus:ring-3 focus:ring-emerald-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-emerald-800 font-sans"
+                    />
+                  </div>
+                  <div>
+                    <label
                       for="password"
                       class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400 font-sans"
                     >
@@ -270,6 +286,7 @@ const firstName = ref('')
 const lastName = ref('')
 const username = ref('')
 const email = ref('')
+const phone = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const agreeToTerms = ref(false)
@@ -282,6 +299,8 @@ const togglePasswordVisibility = () => {
 
 const handleSignup = async () => {
   const trimmedEmail = email.value.trim();
+  const trimmedPhone = phone.value.trim();
+
 
   if (!firstName.value || !lastName.value || !username.value || !trimmedEmail || !password.value) {
     alert('Mohon lengkapi semua bidang yang wajib diisi.');
@@ -297,15 +316,12 @@ const handleSignup = async () => {
     password.value,
     username.value,
     firstName.value,
-    lastName.value
+    lastName.value,
+    trimmedPhone
   );
 
   if (success) {
-    if (userStore.error && userStore.error.includes('verifikasi')) {
-       alert(userStore.error); // Menampilkan pesan verifikasi email jika ada
-    } else {
-       alert('Pendaftaran berhasil! Silakan login.'); // Pesan default sukses
-    }
+    alert('Pendaftaran berhasil! Anda dapat login sekarang.'); // Pesan lebih jelas
     router.push('/signin');
   } else {
     // userStore.error sudah diset di userStore jika ada kegagalan

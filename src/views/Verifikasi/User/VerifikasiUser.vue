@@ -11,6 +11,31 @@
         <span class="block sm:inline">{{ userStore.error }}</span>
       </div>
 
+      <div class="mb-6 flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+        <div class="w-full md:w-1/2">
+          <label for="search-name" class="sr-only">Cari berdasarkan Nama</label>
+          <input
+            id="search-name"
+            type="text"
+            v-model="searchName"
+            placeholder="Cari berdasarkan nama..."
+            class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </div>
+        <div class="w-full md:w-1/2">
+          <label for="filter-role" class="sr-only">Filter berdasarkan Role</label>
+          <select
+            id="filter-role"
+            v-model="filterRole"
+            class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          >
+            <option value="">Semua Role</option>
+            <option v-for="roleOption in userStore.userRoles" :key="roleOption" :value="roleOption">
+              {{ formatRole(roleOption) }}
+            </option>
+          </select>
+        </div>
+      </div>
       <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -34,12 +59,12 @@
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-if="userStore.allUsers.length === 0 && !userStore.loading">
+              <tr v-if="filteredUsers.length === 0 && !userStore.loading">
                   <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
                     Tidak ada pengguna ditemukan.
                   </td>
               </tr>
-              <tr v-for="user in userStore.allUsers" :key="user.id">
+              <tr v-for="user in filteredUsers" :key="user.id">
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                   {{ user.first_name }} {{ user.last_name }}
                 </td>
@@ -103,11 +128,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue'; // Import computed
 import { useUserStore } from '@/store/userStore';
 import { useRouter } from 'vue-router';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
+
+// State untuk search dan filter
+const searchName = ref('');
+const filterRole = ref('');
 
 const userStore = useUserStore();
 const router = useRouter();
@@ -117,6 +146,30 @@ const breadcrumbItems = ref([
   { label: 'Admin', path: '/admin' },
   { label: 'Manajemen Pengguna', path: '/admin/users' }
 ]);
+
+// Computed property untuk memfilter pengguna
+const filteredUsers = computed(() => {
+  let users = userStore.allUsers;
+
+  // Filter berdasarkan nama
+  if (searchName.value) {
+    const searchTerm = searchName.value.toLowerCase();
+    users = users.filter(user =>
+      user.first_name.toLowerCase().includes(searchTerm) ||
+      user.last_name.toLowerCase().includes(searchTerm) ||
+      user.username.toLowerCase().includes(searchTerm) ||
+      user.email.toLowerCase().includes(searchTerm)
+    );
+  }
+
+  // Filter berdasarkan role
+  if (filterRole.value) {
+    users = users.filter(user => user.role === filterRole.value);
+  }
+
+  return users;
+});
+
 
 // State untuk modal konfirmasi penghapusan
 const showDeleteConfirmModal = ref(false);

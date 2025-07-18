@@ -1,132 +1,256 @@
 <template>
   <div>
-    <Navbar />
+    <div class="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow">
+      <Navbar />
+    </div>
 
-    <div class="space-y-8 p-4 sm:p-8 dark:bg-gray-900 min-h-screen">
-      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end mb-8">
-        <div class="md:col-span-1">
-          <label for="filterKategori" class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-400">Filter Kategori</label>
-          <select
-            id="filterKategori"
-            v-model="selectedKategori"
-            @change="fetchProductsWithFilters"
-            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out appearance-none bg-white pr-8 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-            style="background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%20viewBox%3D%220%200%20292.4%20292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%20197.6L146.2%2056.8%205.4%20197.6c-4.8%204.8-12.5%204.8-17.3%200l-5.4-5.4c-4.8-4.8-4.8-12.5%200-17.3L137.6%2025.2c4.8-4.8%2012.5-4.8%2017.3%200l132.8%20132.8c4.8%204.8%204.8-12.5%200%2017.3l-5.4%205.4z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 0.7em top 50%, 0 0; background-size: 0.65em auto, 100%;"
-          >
-            <option value="">Semua Kategori</option>
-            <option v-for="kategori in kategoriUnik" :key="kategori" :value="kategori">
-              {{ kategori }}
-            </option>
-          </select>
-        </div>
-
-        <div class="md:col-span-2 lg:col-span-3">
-          <label for="cariProduk" class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-400">Cari Produk</label>
-          <input
-            id="cariProduk"
-            v-model="searchQuery"
-            @input="debouncedFetchProducts"
-            type="text"
-            placeholder="Cari nama produk..."
-            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-          />
-        </div>
+    <section
+      class="relative bg-cover bg-center bg-no-repeat text-white mb-8 mx-4 sm:mx-8 mt-5 shadow-md overflow-hidden min-h-[450px] flex items-center justify-center"
+      :style="{ backgroundImage: `url(${kelurahanImage})` }"
+    >
+      <div class="absolute inset-0 backdrop-blur grayscale"></div> <div class="relative z-10 flex flex-col items-center justify-center text-center h-full p-8 sm:p-12">
+        <h2 class="text-3xl sm:text-5xl font-extrabold mb-2">KAPAS MADYA BARU</h2> <p class="text-sm sm:text-base">
+          <span class="font-semibold">Jumlah Produk:</span> {{ productStore.products.length }}
+        </p>
       </div>
+    </section>
 
-      <div v-if="productStore.loading && !showDetailOverlay" class="text-center text-gray-600 dark:text-gray-400 py-12 text-lg">
-        Memuat produk...
-      </div>
-      <div v-else-if="productStore.products.length === 0 && !showDetailOverlay" class="text-center text-gray-600 dark:text-gray-400 py-12 text-lg">
-        Tidak ada produk ditemukan. Coba kategori atau kata kunci lain.
-      </div>
+    <div class="px-4 sm:px-8 dark:bg-gray-900">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
 
-      <div v-else class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-7">
-        <div
-          v-for="produk in productStore.products"
-          :key="produk.id"
-          @click="openProductDetailOverlay(produk.id)" class="bg-white shadow-md rounded-l overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-103 hover:shadow-lg group dark:bg-gray-800"
-        >
-          <div class="relative w-full h-48 overflow-hidden">
-            <img
-              :src="produk.image_url || '/images/default-product.jpg'"
-              :alt="produk.name"
-              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-            />
-            <span
-              :class="[
-                'absolute bottom-2 right-2 px-3 py-1 text-xs rounded-full font-bold',
-                produk.status === 'active' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-              ]"
+        <aside class="col-span-1 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md h-fit">
+          <h3 class="text-base font-semibold text-gray-700 dark:text-gray-300 mb-4">Kategori</h3>
+          <div class="flex flex-wrap gap-2">
+            <button
+              class="px-4 py-2 text-sm rounded-full font-medium border transition duration-200"
+              :class="selectedKategori === ''
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'text-gray-700 border-gray-300 dark:text-white dark:border-gray-600'"
+              @click="filterByCategory('')"
             >
-              {{ formatStatus(produk.status) }}
-            </span>
+              Semua
+            </button>
+            <button
+              v-for="kategori in kategoriUnik"
+              :key="kategori"
+              class="px-4 py-2 text-sm rounded-full font-medium border transition duration-200 flex items-center gap-2"
+              :class="selectedKategori === kategori
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'text-gray-700 border-gray-300 dark:text-white dark:border-gray-600'"
+              @click="filterByCategory(kategori)"
+            >
+              {{ kategori }}
+              <span v-if="selectedKategori === kategori" @click.stop="filterByCategory('')" class="ml-1 font-bold text-white">✕</span>
+            </button>
           </div>
-          <div class="p-4 space-y-2">
-            <h4 class="font-bold text-gray-900 text-lg line-clamp-1 dark:text-white">{{ produk.name }}</h4>
-            <p class="text-sm text-gray-700 dark:text-gray-300">{{ formatRupiah(produk.price) }}</p>
+        </aside>
+
+        <section class="col-span-1 md:col-span-3 space-y-6">
+          <div>
+            <label for="cariProduk" class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-400">Cari Produk</label>
+            <input
+              id="cariProduk"
+              v-model="searchQuery"
+              @input="debouncedFetchProducts"
+              type="text"
+              placeholder="Cari nama produk..."
+              class="w-full px-4 py-2 border border-gray-300 rounded-xl dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            />
           </div>
-        </div>
+
+          <div v-if="productStore.loading" class="text-center text-gray-500 dark:text-gray-400">Memuat produk...</div>
+          <div v-else-if="productStore.products.length === 0" class="text-center text-gray-500 dark:text-gray-400">Tidak ada produk ditemukan.</div>
+
+          <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div
+              v-for="produk in productStore.products"
+              :key="produk.id"
+              @click="openProductDetailOverlay(produk.id)"
+              class="cursor-pointer bg-white dark:bg-gray-800 p-4 rounded-xl shadow hover:shadow-lg transition"
+            >
+              <img
+                :src="produk.image_url || '/images/default-product.jpg'"
+                alt="product image"
+                class="w-full h-40 object-cover rounded mb-3"
+              />
+              <h4 class="text-base font-bold text-gray-900 dark:text-white line-clamp-1">{{ produk.name }}</h4>
+              <p class="text-sm text-gray-600 dark:text-gray-300">{{ formatRupiah(produk.price) }}</p>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
 
     <transition name="fade">
-      <div v-if="showDetailOverlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 md-blur dropset-blur-md backdrop-blur-sm" @click.self="closeProductDetailOverlay">
+      <div
+        v-if="showDetailOverlay"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 md-blur dropset-blur-md backdrop-blur-sm"
+        @click.self="closeProductDetailOverlay"
+      >
         <transition name="slide-up">
-          <div v-if="showDetailOverlay" class="relative bg-white dark:bg-gray-800 shadow-xl rounded-xl overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col transform transition-all duration-300">
+          <div
+            v-if="showDetailOverlay"
+            class="relative bg-white dark:bg-gray-800 shadow-xl rounded-xl overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col transform transition-all duration-300"
+          >
             <button
               @click="closeProductDetailOverlay"
               class="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 z-10 p-2 rounded-full bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm transition-colors duration-200"
               aria-label="Tutup"
             >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                ></path>
+              </svg>
             </button>
 
-            <div v-if="productStore.loading" class="flex-grow flex items-center justify-center py-12 text-lg text-gray-600 dark:text-gray-400">
+            <div
+              v-if="productStore.loading"
+              class="flex-grow flex items-center justify-center py-12 text-lg text-gray-600 dark:text-gray-400"
+            >
               Memuat detail produk...
             </div>
-            <div v-else-if="productStore.error" class="flex-grow bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded relative m-4 flex flex-col justify-center items-center text-center" role="alert">
+
+            <div
+              v-else-if="productStore.error"
+              class="flex-grow bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded relative m-4 flex flex-col justify-center items-center text-center"
+              role="alert"
+            >
               <strong class="font-bold text-xl mb-2">Error:</strong>
               <span class="block text-lg">{{ productStore.error }}</span>
-              <p v-if="productStore.error && productStore.error.includes('Produk tidak ditemukan')" class="text-sm mt-3">
+              <p
+                v-if="productStore.error && productStore.error.includes('Produk tidak ditemukan')"
+                class="text-sm mt-3"
+              >
                 Produk ini mungkin telah dihapus atau tidak aktif.
               </p>
             </div>
-            <div v-else-if="productStore.currentProductDetail" class="flex-grow overflow-y-auto custom-scrollbar">
+
+            <div
+              v-else-if="productStore.currentProductDetail"
+              class="flex-grow overflow-y-auto custom-scrollbar"
+            >
               <div class="md:flex h-full">
-                <div class="md:w-1/2 flex items-center justify-center p-4 md:p-8 bg-gray-50 dark:bg-gray-900">
-                  <img :src="productStore.currentProductDetail.image_url || '/images/default-product.jpg'" :alt="productStore.currentProductDetail.name" class="max-w-full max-h-full object-contain rounded-lg shadow-md">
+                <div
+                  class="md:w-1/2 flex items-center justify-center p-4 md:p-8 bg-gray-50 dark:bg-gray-900"
+                >
+                  <img
+                    :src="productStore.currentProductDetail.image_url || '/images/default-product.jpg'"
+                    :alt="productStore.currentProductDetail.name"
+                    class="max-w-full max-h-full object-contain rounded-lg shadow-md"
+                  />
                 </div>
+
                 <div class="md:w-1/2 p-4 md:p-8 flex flex-col">
-                  <span class="text-sm text-gray-500 dark:text-gray-400 mb-2">{{ productStore.currentProductDetail.category || 'Tidak Berkategori' }}</span>
-                  <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-3">{{ productStore.currentProductDetail.name }}</h1>
-                  <p class="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-6">{{ formatRupiah(productStore.currentProductDetail.price) }}</p>
+                  <span class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    {{ productStore.currentProductDetail.category || 'Tidak Berkategori' }}
+                  </span>
+                  <h1
+                    class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-3"
+                  >
+                    {{ productStore.currentProductDetail.name }}
+                  </h1>
+                  <p
+                    class="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-6"
+                  >
+                    {{ formatRupiah(productStore.currentProductDetail.price) }}
+                  </p>
 
                   <div class="mb-6">
-                    <h3 class="text-md font-semibold text-gray-800 dark:text-gray-200 mb-2">Deskripsi Produk:</h3>
-                    <p class="text-gray-700 dark:text-gray-300 leading-relaxed text-sm sm:text-base">{{ productStore.currentProductDetail.description }}</p>
+                    <h3
+                      class="text-md font-semibold text-gray-800 dark:text-gray-200 mb-2"
+                    >
+                      Deskripsi Produk:
+                    </h3>
+                    <p
+                      class="text-gray-700 dark:text-gray-300 leading-relaxed text-sm sm:text-base"
+                    >
+                      {{ productStore.currentProductDetail.description }}
+                    </p>
                   </div>
 
-                  <div class="border-t border-gray-200 dark:border-gray-700 pt-6 mt-auto">
-                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Informasi Penjual</h2>
-                    <p v-if="productStore.currentProductDetail.created_by_user" class="text-gray-700 dark:text-gray-300 text-sm sm:text-base">
-                      <span class="font-semibold">Dibuat Oleh:</span> {{ productStore.currentProductDetail.created_by_user.first_name || productStore.currentProductDetail.created_by_user.username || 'Tidak Diketahui' }}
-                        <span class="ml-1"> ( {{ productStore.currentProductDetail.contact_wa }} )</span>
+                  <div
+                    class="border-t border-gray-200 dark:border-gray-700 pt-6 mt-auto"
+                  >
+                    <h2
+                      class="text-xl font-bold text-gray-900 dark:text-white mb-3"
+                    >
+                      Informasi Penjual
+                    </h2>
 
-                    </p>
-                    <p v-else class="text-gray-700 dark:text-gray-300 text-sm sm:text-base">
-                        <span class="font-semibold">Dibuat Oleh:</span> Tidak Diketahui
+                    <p
+                      v-if="productStore.currentProductDetail.created_by_user"
+                      class="text-gray-700 dark:text-gray-300 text-sm sm:text-base"
+                    >
+                      <span class="font-semibold">Dibuat Oleh:</span>
+                      {{
+                        productStore.currentProductDetail.created_by_user.first_name ||
+                        productStore.currentProductDetail.created_by_user.username ||
+                        'Tidak Diketahui'
+                      }}
+                      <span class="ml-1">
+                        ({{ productStore.currentProductDetail.contact_wa }})
+                      </span>
                     </p>
 
-                    <p v-if="productStore.currentProductDetail.store" class="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base">
-                      <span class="font-semibold">Toko:</span> {{ productStore.currentProductDetail.store.store_name }}
+                    <p
+                      v-else
+                      class="text-gray-700 dark:text-gray-300 text-sm sm:text-base"
+                    >
+                      <span class="font-semibold">Dibuat Oleh:</span> Tidak Diketahui
                     </p>
-                    <p v-if="productStore.currentProductDetail.store?.contact_whatsapp" class="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base">
-                      <span class="font-semibold">WhatsApp:</span> <a :href="`https://wa.me/${productStore.currentProductDetail.store.contact_whatsapp}`" target="_blank" class="text-blue-500 hover:underline">{{ productStore.currentProductDetail.store.contact_whatsapp }}</a>
+
+                    <p
+                      v-if="productStore.currentProductDetail.store"
+                      class="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base"
+                    >
+                      <span class="font-semibold">Toko:</span>
+                      {{ productStore.currentProductDetail.store.store_name }}
                     </p>
-                    <p v-if="productStore.currentProductDetail.store?.ecommerce_link" class="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base">
-                      <span class="font-semibold">Link E-commerce:</span> <a :href="formatLink(productStore.currentProductDetail.store.ecommerce_link)" target="_blank" class="text-blue-500 hover:underline break-all">{{ productStore.currentProductDetail.store.ecommerce_link }}</a>
+
+                    <p
+                      v-if="productStore.currentProductDetail.store?.contact_whatsapp"
+                      class="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base"
+                    >
+                      <span class="font-semibold">WhatsApp:</span>
+                      <a
+                        :href="`https://wa.me/${productStore.currentProductDetail.store.contact_whatsapp}`"
+                        target="_blank"
+                        class="text-blue-500 hover:underline"
+                      >
+                        {{ productStore.currentProductDetail.store.contact_whatsapp }}
+                      </a>
                     </p>
-                    <p v-else-if="productStore.currentProductDetail.created_by_user && productStore.currentProductDetail.created_by_user.role === 'umkm' && !productStore.currentProductDetail.store" class="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base">
+
+                    <p
+                      v-if="productStore.currentProductDetail.store?.ecommerce_link"
+                      class="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base"
+                    >
+                      <span class="font-semibold">Link E-commerce:</span>
+                      <a
+                        :href="formatLink(productStore.currentProductDetail.store.ecommerce_link)"
+                        target="_blank"
+                        class="text-blue-500 hover:underline break-words"
+                      >
+                        {{ productStore.currentProductDetail.store.ecommerce_link }}
+                      </a>
+                    </p>
+
+                    <p
+                      v-else-if="productStore.currentProductDetail.created_by_user &&
+                        productStore.currentProductDetail.created_by_user.role === 'umkm' &&
+                        !productStore.currentProductDetail.store"
+                      class="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base"
+                    >
                       UMKM ini belum memiliki profil toko yang lengkap.
                     </p>
                   </div>
@@ -140,32 +264,45 @@
                     </button>
 
                     <button
-                      v-if="productStore.currentProductDetail.store?.ecommerce_link" @click="redirectToEcommerce(productStore.currentProductDetail.store.ecommerce_link)"
+                      v-if="productStore.currentProductDetail.store?.ecommerce_link"
+                      @click="redirectToEcommerce(productStore.currentProductDetail.store.ecommerce_link)"
                       class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 flex-grow sm:flex-grow-0"
                     >
                       Kunjungi Toko
                     </button>
-                    <span v-else class="px-6 py-3 text-gray-500 dark:text-gray-400 text-sm italic flex-grow sm:flex-grow-0 flex items-center justify-center">
+
+                    <span
+                      v-else
+                      class="px-6 py-3 text-gray-500 dark:text-gray-400 text-sm italic flex-grow sm:flex-grow-0 flex items-center justify-center"
+                    >
                       Link E-commerce tidak tersedia.
                     </span>
                   </div>
                 </div>
               </div>
             </div>
-            <div v-else-if="!productStore.loading && !productStore.error" class="flex-grow flex items-center justify-center py-12 text-lg text-gray-600 dark:text-gray-400">
+
+            <div
+              v-else-if="!productStore.loading && !productStore.error"
+              class="flex-grow flex items-center justify-center py-12 text-lg text-gray-600 dark:text-gray-400"
+            >
               Produk tidak ditemukan.
             </div>
           </div>
         </transition>
       </div>
     </transition>
-    </div>
+
+  </div>
 </template>
+
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useProductStore } from '@/store/productStore';
 import Navbar from '@/Views/Marketplace/Navbar.vue';
+import kelurahanImage from '@/assets/images/kelurahan.jpg';
+
 
 const productStore = useProductStore();
 
@@ -189,6 +326,12 @@ const fetchProductsWithFilters = () => {
     status: 'active'
   });
 };
+
+const filterByCategory = (kategori) => {
+  selectedKategori.value = kategori;
+  fetchProductsWithFilters();
+};
+
 
 const debouncedFetchProducts = () => {
   clearTimeout(debounceTimeout);
@@ -223,6 +366,7 @@ const formatRupiah = (angka) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
 };
 
+// Fungsi formatStatus tidak digunakan di template utama Anda, tetapi tidak ada salahnya membiarkannya
 const formatStatus = (status) => {
   if (!status) return '';
   switch (status) {

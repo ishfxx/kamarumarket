@@ -1,4 +1,31 @@
 <template>
+  <!-- Modal Konfirmasi Hapus Produk -->
+<div
+  v-if="showDeleteConfirmModal"
+  class="fixed inset-0 z-[99999] flex items-center justify-center backdrop-blur-sm p-4"
+>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Konfirmasi Hapus Produk</h3>
+    <p class="text-gray-700 dark:text-gray-300 mb-6">
+      Apakah Anda yakin ingin menghapus produk <b>{{ productToDeleteName }}</b>? Tindakan ini tidak dapat dibatalkan.
+    </p>
+    <div class="flex justify-end gap-3">
+      <button
+        @click="cancelDeleteProduct"
+        class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+      >
+        Batal
+      </button>
+      <button
+        @click="deleteProduct"
+        class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+      >
+        Hapus
+      </button>
+    </div>
+  </div>
+</div>
+
   <AdminLayout>
     <Breadcrumb :pageTitle="pageTitle" :breadcrumbItems="breadcrumbItems" />
 
@@ -6,7 +33,7 @@
       <div v-if="productStore.loading" class="text-center text-gray-600 dark:text-gray-400">
         Memuat produk Anda...
       </div>
-      <div v-if="productStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+      <div v-if="productStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="showToast">
         <strong class="font-bold">Error:</strong>
         <span class="block sm:inline">{{ productStore.error }}</span>
       </div>
@@ -64,7 +91,7 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button @click="openEditProductModal(product)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-600 mr-3">Edit</button>
-                  <button @click="confirmDeleteProduct(product.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-600">Hapus</button>
+                  <button @click="openDeleteConfirmModal(product.id, product.name)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-600">Hapus</button>
                 </td>
               </tr>
             </tbody>
@@ -132,7 +159,9 @@ import AdminLayout from '@/components/layout/AdminLayout.vue';
 import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
 import { supabase } from '@/supabase';
 import { useRouter } from 'vue-router';
+import { useToast } from '@/composables/useToast';
 
+const { showToast } = useToast();
 const userStore = useUserStore();
 const productStore = useProductStore();
 const router = useRouter();
@@ -176,15 +205,14 @@ const formatStatus = (status: string) => {
 const categories = ref([
   'Elektronik',
   'Makanan & Minuman',
-  'Fashion Pria',
-  'Fashion Wanita',
+  'Fashion',
   'Perlengkapan Rumah',
   'Kecantikan',
   'Otomotif',
   'Olahraga',
   'Buku & Alat Tulis',
-  'Kerajinan Tangan',
-  'Lain-lain'
+  'Usaha Kreatif',
+  'Jasa'
 ]);
 
 const openAddProductModal = () => {
@@ -292,7 +320,7 @@ const saveProduct = async () => {
   }
 
   if (success) {
-    alert(`Produk berhasil di${isEditMode.value ? 'perbarui' : 'tambahkan'}!`);
+    showToast(`Produk berhasil di${isEditMode.value ? 'perbarui' : 'tambahkan'}!`);
     closeProductModal();
   } else {
     // Error sudah diset di store
@@ -303,12 +331,41 @@ const confirmDeleteProduct = async (productId: string) => {
   if (confirm('Apakah Anda yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan.')) {
     const success = await productStore.deleteProduct(productId);
     if (success) {
-      alert('Produk berhasil dihapus!');
+      showToast('Produk berhasil dihapus!');
     } else {
       // Error sudah diset di store
     }
   }
 };
+
+const showDeleteConfirmModal = ref(false);
+const productToDeleteId = ref<string | null>(null);
+const productToDeleteName = ref('');
+
+const openDeleteConfirmModal = (id: string, name: string) => {
+  productToDeleteId.value = id;
+  productToDeleteName.value = name;
+  showDeleteConfirmModal.value = true;
+};
+
+const cancelDeleteProduct = () => {
+  productToDeleteId.value = null;
+  productToDeleteName.value = '';
+  showDeleteConfirmModal.value = false;
+};
+
+const deleteProduct = async () => {
+  if (!productToDeleteId.value) return;
+
+  const success = await productStore.deleteProduct(productToDeleteId.value);
+  if (success) {
+    showToast('Produk berhasil dihapus!');
+    cancelDeleteProduct();
+  } else {
+    showToast('Gagal menghapus produk.');
+  }
+};
+
 
 onMounted(async () => {
   await userStore.initializeUser();
@@ -316,7 +373,7 @@ onMounted(async () => {
   if (userStore.isLoggedIn && (userStore.profile?.role === 'umkm' || userStore.profile?.role === 'admin')) {
     await productStore.fetchUmkmProducts(userStore.user.id);
   } else {
-    alert('Anda tidak memiliki izin untuk mengakses halaman ini.');
+    showToast('Anda tidak memiliki izin untuk mengakses halaman ini.');
     router.push('/dashboard');
   }
 });

@@ -83,14 +83,6 @@
           <div class="flex justify-end gap-3 mt-6">
             <button
               type="button"
-              v-if="!isEditing"
-              @click="isEditing = true"
-              class="px-4 py-2.5 text-sm font-medium text-white transition rounded-lg bg-emerald-500 shadow-theme-xs hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50"
-            >
-              Edit Profil
-            </button>
-            <button
-              type="button"
               v-if="isEditing"
               @click="handleCancel"
               class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-400 transition rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"

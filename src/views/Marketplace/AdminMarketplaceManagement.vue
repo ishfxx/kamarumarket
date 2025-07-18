@@ -9,7 +9,7 @@
       <div v-if="productStore.loading" class="text-center text-gray-600 dark:text-gray-400">
         Memuat produk marketplace...
       </div>
-      <div v-if="productStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+      <div v-if="productStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="showToast">
         <strong class="font-bold">Error:</strong>
         <span class="block sm:inline">{{ productStore.error }}</span>
       </div>
@@ -145,7 +145,9 @@ import AdminLayout from '@/components/layout/AdminLayout.vue';
 import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
 import { supabase } from '@/supabase';
 import { useRouter } from 'vue-router';
+import { useToast } from '@/composables/useToast';
 
+const { showToast } = useToast();
 const userStore = useUserStore();
 const productStore = useProductStore();
 const router = useRouter();
@@ -336,7 +338,7 @@ const saveProduct = async () => {
   }
 
   if (success) {
-    alert(`Produk berhasil di${isEditMode.value ? 'perbarui' : 'tambahkan'}!`);
+    showToast(`Produk berhasil di${isEditMode.value ? 'perbarui' : 'tambahkan'}!`);
     closeProductModal();
     await fetchProductsWithFilters();
   } else {
@@ -347,9 +349,9 @@ const saveProduct = async () => {
 const updateProductStatus = async (productId: string, newStatus: string) => {
   const success = await productStore.updateProduct(productId, { status: newStatus });
   if (success) {
-    alert('Status produk berhasil diperbarui!');
+    showToast('Status produk berhasil diperbarui!');
   } else {
-    alert('Gagal memperbarui status produk: ' + (productStore.error || 'Terjadi kesalahan.'));
+    showToast('Gagal memperbarui status produk: ' + (productStore.error || 'Terjadi kesalahan.'));
     await fetchProductsWithFilters();
   }
 };
@@ -358,7 +360,7 @@ const confirmDeleteProduct = async (productId: string) => {
   if (confirm('Apakah Anda yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan.')) {
     const success = await productStore.deleteProduct(productId);
     if (success) {
-      alert('Produk berhasil dihapus!');
+      showToast('Produk berhasil dihapus!');
     } else {
       // Error sudah diset di store
     }
@@ -371,7 +373,7 @@ onMounted(async () => {
   if (userStore.isLoggedIn && userStore.profile?.role === 'admin') {
     await fetchProductsWithFilters();
   } else {
-    alert('Anda tidak memiliki izin untuk mengakses halaman ini.');
+    showToast('Anda tidak memiliki izin untuk mengakses halaman ini.');
     router.push('/dashboard');
   }
 });

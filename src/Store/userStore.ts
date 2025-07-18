@@ -66,7 +66,8 @@ export const useUserStore = defineStore('user', {
       passwordInput: string,
       usernameInput: string,
       firstNameInput: string,
-      lastNameInput: string
+      lastNameInput: string,
+      phoneInput: string
     ) {
       this.loading = true;
       this.error = null;
@@ -80,6 +81,7 @@ export const useUserStore = defineStore('user', {
               username_display: usernameInput, // Simpan di metadata user auth
               first_name_display: firstNameInput,
               last_name_display: lastNameInput,
+              phone_display: phoneInput,
             }
           }
         });
@@ -90,21 +92,44 @@ export const useUserStore = defineStore('user', {
           return false;
         }
 
-        // Jika email verification aktif, user tidak langsung sign-in ke authData.user
-        // Jadi, user akan null di sini. Kita berikan pesan untuk cek email.
-        this.user = authData.user; // Ini akan null jika verifikasi email diaktifkan
-        if (!authData.user) {
-            this.error = 'Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi sebelum login.';
-            return true; // Sukses mengirim email verifikasi
+        // PENTING: Periksa apakah user langsung terautentikasi (email verification dinonaktifkan)
+        if (authData.user) {
+          this.user = authData.user;
+
+          // Sekarang, segera buat profil di tabel 'users' Anda
+          const { data: newProfile, error: createProfileError } = await supabase.from('users').insert({
+            id: this.user.id,
+            email: this.user.email,
+            username: usernameInput, // Gunakan username langsung dari input
+            first_name: firstNameInput,
+            last_name: lastNameInput,
+            phone: phoneInput,
+            role: 'user', // Default role
+          }).select().single();
+
+          if (createProfileError) {
+            console.error('UserStore: Error creating new profile during registration:', createProfileError.message);
+            this.error = `Pendaftaran berhasil, tetapi gagal membuat data profil: ${createProfileError.message}.`;
+            // Anda mungkin ingin menghapus user dari auth.users di sini jika pembuatan profil gagal
+            // Atau biarkan saja dan minta admin menanganinya
+            return false;
+          }
+
+          this.profile = newProfile;
+          this.lastActivityTime = Date.now();
+          localStorage.setItem('userProfile', JSON.stringify(this.profile));
+          localStorage.setItem('userEmail', this.user.email || '');
+          localStorage.setItem('lastActivityTime', String(this.lastActivityTime));
+
+          // Jika pendaftaran langsung sukses dan profil dibuat, tidak perlu pesan verifikasi
+          return true;
+
+        } else {
+          // Ini akan terjadi jika email verification masih aktif di Supabase
+          // Anda bisa menghapus blok ini jika Anda yakin verifikasi email dinonaktifkan
+          this.error = 'Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi sebelum login.';
+          return true; // Sukses mengirim email verifikasi
         }
-
-        // Logika di bawah ini hanya akan berjalan jika auto-login setelah register diaktifkan
-        // Atau jika email verification dinonaktifkan di Supabase.
-        // Sebaiknya tidak langsung membuat profil di sini jika email verification aktif,
-        // karena Supabase auth.users belum "confirmed".
-        // Profil akan dibuat saat login pertama setelah verifikasi.
-
-        return true;
 
       } catch (err: any) {
         this.error = err.message || 'Terjadi kesalahan tidak terduga saat pendaftaran.';
@@ -125,7 +150,9 @@ export const useUserStore = defineStore('user', {
           emailToAuthenticate = usernameOrEmailInput.trim();
         } else {
           // Cari email berdasarkan username di tabel 'users'
-          const { data, error } = await supabase.from('users').select('email').eq('username', usernameOrEmailInput.trim()).single();
+          // Cari email berdasarkan username di tabel 'users'
+                // ATAU cari email berdasarkan phone di tabel 'users'
+          const { data, error } = await supabase.from('users').select('email').or(`username.eq.${usernameOrEmailInput.trim()},phone.eq.${usernameOrEmailInput.trim()}`).single();
           if (error) {
             if (error.code === 'PGRST116') { // Tidak ditemukan
                this.error = 'Username atau password salah.';

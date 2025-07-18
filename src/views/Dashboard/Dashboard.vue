@@ -30,7 +30,7 @@
         </div>
 
         <div class="mt-8">
-            <h3 class="text-xl font-semibold text-gray-700 dark:text-white mb-4">Produk Terbaru (Admin View)</h3>
+            <h3 class="text-xl font-semibold text-gray-700 dark:text-white mb-4">Produk Terbaru</h3>
             <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">

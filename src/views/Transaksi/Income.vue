@@ -6,7 +6,7 @@
       <div v-if="bookkeepingStore.loading" class="text-center text-gray-600 dark:text-gray-400">
         Memuat data pemasukan...
       </div>
-      <div v-if="bookkeepingStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+      <div v-if="bookkeepingStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="showToast">
         <strong class="font-bold">Error:</strong>
         <span class="block sm:inline">{{ bookkeepingStore.error }}</span>
       </div>
@@ -56,7 +56,7 @@
               <tr v-for="transaksi in bookkeepingStore.incomeTransactions" :key="transaksi.id">
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ formatDate(transaksi.date) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ transaksi.description }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 font-semibold">Rp {{ formatRupiah(transaksi.amount) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 font-semibold">{{ formatRupiah(transaksi.amount) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button @click="editTransaction(transaksi)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-600 mr-3">Edit</button>
                   <button @click="confirmDeleteTransaction(transaksi.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-600">Hapus</button>
@@ -105,7 +105,9 @@ import { useBookkeepingStore } from '@/store/bookkeepingStore';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
 import { useRouter } from 'vue-router';
+import { useToast } from '@/composables/useToast';
 
+const { showToast } = useToast();
 const userStore = useUserStore();
 const bookkeepingStore = useBookkeepingStore();
 const router = useRouter();
@@ -142,7 +144,7 @@ const formatDate = (dateString: string) => {
 
 const addTransaction = async () => {
   if (!userStore.user?.id) {
-    alert('User ID tidak ditemukan. Mohon login ulang.');
+    showToast('User ID tidak ditemukan. Mohon login ulang.');
     return;
   }
   const transactionData = {
@@ -155,7 +157,7 @@ const addTransaction = async () => {
 
   const success = await bookkeepingStore.createTransaction(transactionData);
   if (success) {
-    alert('Pemasukan berhasil ditambahkan!');
+    showToast('Pemasukan berhasil ditambahkan!');
     newTransaction.value = { date: new Date().toISOString().split('T')[0], amount: 0, description: '' };
   } else {
     // Error sudah diset di store
@@ -178,7 +180,7 @@ const saveEditedTransaction = async () => {
 
   const success = await bookkeepingStore.updateTransaction(editedTransaction.value.id, dataToUpdate);
   if (success) {
-    alert('Transaksi berhasil diperbarui!');
+    showToast('Transaksi berhasil diperbarui!');
     showEditModal.value = false;
   } else {
     // Error sudah diset di store
@@ -189,7 +191,7 @@ const confirmDeleteTransaction = async (id: string) => {
   if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
     const success = await bookkeepingStore.deleteTransaction(id);
     if (success) {
-      alert('Transaksi berhasil dihapus!');
+      showToast('Transaksi berhasil dihapus!');
     } else {
       // Error sudah diset di store
     }
@@ -203,7 +205,7 @@ onMounted(async () => {
     const umkmIdToFetch = userStore.profile?.role === 'umkm' ? userStore.user.id : undefined;
     await bookkeepingStore.fetchTransactions(umkmIdToFetch as string, 'pemasukan'); // <<< PERBAIKAN: Menggunakan 'pemasukan'
   } else {
-    alert('Anda tidak memiliki izin untuk mengakses halaman ini.');
+    showToast('Anda tidak memiliki izin untuk mengakses halaman ini.');
     router.push('/dashboard');
   }
 });
