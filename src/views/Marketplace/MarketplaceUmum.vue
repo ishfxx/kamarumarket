@@ -310,7 +310,6 @@ const searchQuery = ref('');
 const selectedKategori = ref('');
 let debounceTimeout = null;
 
-// --- State untuk mengontrol overlay ---
 const showDetailOverlay = ref(false); // Mengontrol visibilitas modal
 const selectedProductId = ref(null); // ID produk yang akan ditampilkan di modal
 
