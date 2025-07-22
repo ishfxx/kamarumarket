@@ -1,6 +1,6 @@
 <template>
-  <AdminLayout> <Breadcrumb :pageTitle="pageTitle" :breadcrumbItems="breadcrumbItems" />
-
+  <AdminLayout>
+    <Breadcrumb :pageTitle="pageTitle" :breadcrumbItems="breadcrumbItems" />
     <div class="px-6 py-8 dark:bg-gray-900 min-h-screen">
       <div v-if="userStore.loading || productStore.loading" class="text-center text-gray-600 dark:text-gray-400">
         Memuat data dashboard...
@@ -30,31 +30,30 @@
         </div>
 
         <div class="mt-8">
-            <h3 class="text-xl font-semibold text-gray-700 dark:text-white mb-4">Produk Terbaru</h3>
-            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nama Produk</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Harga</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Dibuat Oleh</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            <tr v-for="product in latestProductsAdmin" :key="product.id">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ product.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatRupiah(product.price) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatStatus(product.status) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ getCreatorName(product.created_by) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+          <h3 class="text-xl font-semibold text-gray-700 dark:text-white mb-4">Produk Terbaru</h3>
+          <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nama Produk</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Harga</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Dibuat Oleh</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tr v-for="(product, index) in latestProductsAdmin" :key="product.id ?? `admin-${index}`">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ product.name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatRupiah(product.price) }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">formatStatus(product.status ?? 'inactive')</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ getCreatorName(product.created_by ?? '') }}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
+          </div>
         </div>
-
       </div>
 
       <div v-else-if="userStore.getUserRole === 'umkm'">
@@ -90,10 +89,10 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            <tr v-for="product in latestUmkmProducts" :key="product.id">
+                            <tr v-for="(product, index) in latestUmkmProducts" :key="product.id ?? `umkm-${index}`">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ product.name }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatRupiah(product.price) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatStatus(product.status) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatStatus(product.status ?? 'inactive') }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -126,6 +125,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue';
 import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
+import type { User } from '@/types';
 
 const userStore = useUserStore();
 const productStore = useProductStore();
@@ -162,20 +162,19 @@ const getRoleDisplayName = (role: string | null) => {
   }
 };
 
-// --- Data & Fungsi Khusus Admin ---
-// totalUsers dan totalUmkms berasal dari userStore.allUsers
 const totalUsers = computed(() => userStore.allUsers.length);
 const totalUmkms = computed(() => userStore.allUsers.filter(u => u.role === 'umkm').length);
-// pendingProducts berasal dari productStore.products (yang di-fetch Admin)
-const pendingProducts = computed(() => (productStore.products || []).filter(p => p.status === 'pending_review').length);
+const pendingProducts = computed(() => (productStore.products ?? []).filter(p => p.status === 'pending_review').length);
 
 const latestProductsAdmin = computed(() => {
-  return [...(productStore.products || [])] // Pastikan array tidak undefined
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const products = productStore.products ?? [];
+  return [...products]
+    .filter(p => p.created_at)
+    .sort((a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime())
     .slice(0, 5);
 });
 
-const creators = ref({});
+const creators = ref<Record<string, User>>({});
 const fetchCreators = async (productUsers: string[]) => {
   if (productUsers.length === 0) return;
   try {
@@ -194,22 +193,17 @@ const fetchCreators = async (productUsers: string[]) => {
     console.error('Error in fetchCreators dashboard:', error);
   }
 };
-const getCreatorName = (userId: string) => {
-  const creator = creators.value[userId];
-  if (creator) {
-    return creator.first_name || creator.username;
-  }
-  return 'Tidak Diketahui';
-};
 
+function getCreatorName(id: string): string {
+  return id || 'Tidak diketahui';
+}
 
-// --- Data & Fungsi Khusus UMKM ---
-// pendingUmkmProducts berasal dari productStore.umkmProducts
-const pendingUmkmProducts = computed(() => (productStore.umkmProducts || []).filter(p => p.status === 'pending_review').length);
+const pendingUmkmProducts = computed(() => (productStore.umkmProducts ?? []).filter(p => p.status === 'pending_review').length);
 const latestUmkmProducts = computed(() => {
-    return [...(productStore.umkmProducts || [])] // Pastikan array tidak undefined
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 5);
+  return [...(productStore.umkmProducts ?? [])]
+    .filter(p => p.created_at)
+    .sort((a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime())
+    .slice(0, 5);
 });
 
 const createUmkmStore = async () => {
@@ -217,15 +211,12 @@ const createUmkmStore = async () => {
     alert('Hanya pengguna dengan role UMKM yang dapat membuka toko.');
     return;
   }
-
   if (confirm('Anda belum memiliki toko. Apakah Anda ingin membuat toko sekarang?')) {
     const storeName = prompt('Masukkan Nama Toko Anda:');
     if (storeName && storeName.trim()) {
-      // Panggil createStore dari productStore
       const success = await productStore.createStore({ store_name: storeName.trim() });
       if (success) {
         alert('Toko berhasil dibuat!');
-        // userStore.myStore sudah otomatis diupdate oleh productStore.createStore
       } else {
         alert('Gagal membuat toko: ' + (productStore.error || 'Terjadi kesalahan.'));
       }
@@ -235,34 +226,24 @@ const createUmkmStore = async () => {
   }
 };
 
-
-// --- onMounted Logic ---
 onMounted(async () => {
-  await userStore.initializeUser(); // Pastikan user diinisialisasi pertama
-
+  await userStore.initializeUser();
   if (!userStore.isLoggedIn) {
     alert('Anda harus login untuk mengakses dashboard.');
-    router.push('/signin'); // Mengarahkan ke signin jika tidak login
-    return; // Hentikan eksekusi lebih lanjut
+    router.push('/signin');
+    return;
   }
-
-  // Jika sudah login, lanjutkan berdasarkan peran
   if (userStore.isAdmin) {
     await userStore.fetchAllUsers();
-    // Admin fetch SEMUA produk (status: undefined) untuk menghitung pending
-    await productStore.fetchProducts({ status: 'all' }); // Ubah menjadi 'all' agar admin bisa melihat semua status
-    const uniqueCreatorIds = [...new Set((productStore.products || []).map(p => p.created_by))].filter(Boolean);
-    await fetchCreators(uniqueCreatorIds);
+    await productStore.fetchProducts({ status: 'all' });
+    const uniqueCreatorIds = [...new Set((productStore.products ?? []).map(p => p.created_by))].filter(Boolean);
+    await fetchCreators(uniqueCreatorIds as string[]);
   } else if (userStore.getUserRole === 'umkm') {
     if (userStore.user?.id) {
-        // Ambil produk UMKM milik user
-        await productStore.fetchUmkmProducts(userStore.user.id);
-        // Ambil data toko UMKM milik user
-        await userStore.fetchUserStore(userStore.user.id); // Panggil fetchUserStore dari userStore
+      await productStore.fetchUmkmProducts(userStore.user.id);
+      await userStore.fetchUserStore(userStore.user.id);
     } else {
-        console.error("Dashboard: User ID not available for UMKM fetching.");
-        // Handle case where user.id is null/undefined for UMKM
-        // Maybe redirect or show a specific message.
+      console.error("Dashboard: User ID not available for UMKM fetching.");
     }
   }
 });

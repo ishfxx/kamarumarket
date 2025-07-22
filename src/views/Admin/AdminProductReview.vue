@@ -33,18 +33,18 @@
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-for="product in pendingReviewProducts" :key="product.id">
+              <tr v-for="(product, index) in pendingReviewProducts.filter(p => p.id !== null)" :key="product.id ?? `product-${index}`">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <img :src="product.image_url || '/images/default-product.jpg'" alt="Produk" class="w-16 h-16 object-cover rounded-md">
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ product.name }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"> {{ formatRupiah(product.price) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ product.category || '-' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ getCreatorName(product.created_by) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ getCreatorName(product.created_by ?? '') }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button @click="updateProductStatus(product.id, 'active')" class="px-3 py-1 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 mr-2">Set Aktif</button>
-                  <button @click="updateProductStatus(product.id, 'inactive')" class="px-3 py-1 text-sm bg-yellow-500 text-white rounded-md hover:bg-yellow-600 mr-2">Set Nonaktif</button>
-                  <button @click="confirmDeleteProduct(product.id)" class="px-3 py-1 text-sm bg-red-500 text-white rounded-md hover:bg-red-600">Hapus</button>
+                  <button @click="updateProductStatus(product.id!, 'active' as ProductStatus)">Set Aktif</button>
+                  <button @click="updateProductStatus(product.id!, 'inactive' as ProductStatus)">Set Nonaktif</button>
+                  <button @click="confirmDeleteProduct(product.id!)">Hapus</button>
                 </td>
               </tr>
             </tbody>
@@ -63,6 +63,10 @@ import AdminLayout from '@/components/layout/AdminLayout.vue';
 import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
 import { supabase } from '@/supabase'; // Untuk fetch nama UMKM
 import { useRouter } from 'vue-router'; // Untuk redirect
+import type { User } from '@/types'; // Pastikan User diimpor
+import type { ProductStatus } from '@/types'; // Pastikan ProductStatus diimpor
+import type { Product } from '@/types/index.d.ts';
+
 
 const userStore = useUserStore();
 const productStore = useProductStore();
@@ -79,7 +83,7 @@ const pendingReviewProducts = computed(() => {
   return (productStore.products || []).filter(p => p.status === 'pending_review');
 });
 
-const creators = ref({}); // Untuk menyimpan map { user_id: { first_name, last_name, username } }
+const creators = ref<Record<string, User>>({});
 
 const fetchCreators = async (productUsers: string[]) => {
   if (productUsers.length === 0) return;
@@ -102,20 +106,20 @@ const fetchCreators = async (productUsers: string[]) => {
   }
 };
 
-const getCreatorName = (userId: string) => {
-  const creator = creators.value[userId];
-  if (creator) {
-    return creator.first_name || creator.username;
-  }
-  return 'Tidak Diketahui';
-};
+function getCreatorName(id: string): string {
+  const user = productStore.products
+    .flatMap((p) => p.created_by_user ? [p.created_by_user] : [])
+    .find((u: User | undefined) => u?.id === id);
+  return user?.name || 'Tidak diketahui';
+}
+
 
 const formatRupiah = (angka: number) => {
   if (typeof angka !== 'number') return '0';
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
 };
 
-const updateProductStatus = async (productId: string, newStatus: string) => {
+const updateProductStatus = async (productId: string, newStatus: ProductStatus) => {
   if (confirm(`Apakah Anda yakin ingin mengubah status produk ini menjadi ${newStatus === 'active' ? 'Aktif' : 'Nonaktif'}?`)) {
     const success = await productStore.updateProduct(productId, { status: newStatus });
     if (success) {
@@ -152,7 +156,7 @@ onMounted(async () => {
 
     // Setelah produk dimuat, ambil informasi pembuatnya
     const uniqueCreatorIds = [...new Set(productStore.products.map(p => p.created_by))].filter(Boolean);
-    await fetchCreators(uniqueCreatorIds);
+    await fetchCreators(uniqueCreatorIds.filter((id): id is string => typeof id === 'string'));
   } else {
     // Redirect jika bukan Admin atau belum login
     alert('Anda tidak memiliki izin untuk mengakses halaman ini.');
