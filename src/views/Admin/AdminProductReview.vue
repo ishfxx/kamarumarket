@@ -41,10 +41,27 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"> {{ formatRupiah(product.price) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ product.category || '-' }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ getCreatorName(product.created_by ?? '') }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button @click="updateProductStatus(product.id!, 'active' as ProductStatus)">Set Aktif</button>
-                  <button @click="updateProductStatus(product.id!, 'inactive' as ProductStatus)">Set Nonaktif</button>
-                  <button @click="confirmDeleteProduct(product.id!)">Hapus</button>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                  <button
+                    @click="updateProductStatus(product.id!, 'active' as ProductStatus)"
+                    class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800 transition"
+                  >
+                    ✅ Aktif
+                  </button>
+
+                  <button
+                    @click="updateProductStatus(product.id!, 'inactive' as ProductStatus)"
+                    class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900 dark:text-yellow-300 dark:hover:bg-yellow-800 transition"
+                  >
+                    🚫 Nonaktif
+                  </button>
+
+                  <button
+                    @click="confirmDeleteProduct(product.id!)"
+                    class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800 transition"
+                  >
+                    🗑️ Hapus
+                  </button>
                 </td>
               </tr>
             </tbody>

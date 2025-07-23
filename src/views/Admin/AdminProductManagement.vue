@@ -6,7 +6,7 @@
       <div class="flex justify-between items-center mb-6">
         <button
           @click="fetchProducts"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
         >
           Refresh Produk
         </button>
@@ -117,7 +117,9 @@
                 />
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                {{ produk.name }}
+                <button @click="openProductPreviewModal(produk)" class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer text-left">
+                  {{ produk.name }}
+                </button>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                 {{ produk.category || 'N/A' }}
@@ -162,7 +164,7 @@
       </div>
     </div>
 
-    <div v-if="showDeleteConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center md-blur p-4 backdrop-blur-md">
+    <div v-if="showDeleteConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md">
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Konfirmasi Hapus Produk</h3>
         <p v-if="productToDeleteId" class="text-gray-700 dark:text-gray-300 mb-6">
@@ -188,7 +190,7 @@
       </div>
     </div>
 
-    <div v-if="showEditStatusModal" class="fixed inset-0 z-50 flex items-center justify-center md-blur p-4 backdrop-blur-md">
+    <div v-if="showEditStatusModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md">
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Ubah Status Produk: {{ productToEdit?.name }}</h3>
         <div class="mb-4">
@@ -219,11 +221,64 @@
         </div>
       </div>
     </div>
+
+    <div v-if="showProductPreviewModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg overflow-y-auto max-h-[90vh]">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Detail Produk</h3>
+          <button @click="closeProductPreviewModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-3xl leading-none">&times;</button>
+        </div>
+
+        <div v-if="productToPreview" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="md:col-span-1 flex justify-center items-center">
+            <img
+              :src="productToPreview.image_url || '/images/default-product.jpg'"
+              alt="Product Image"
+              class="max-h-64 object-contain rounded-md shadow-md w-full"
+            />
+          </div>
+          <div class="md:col-span-1 space-y-3 text-gray-700 dark:text-gray-300">
+            <p><strong>Nama:</strong> {{ productToPreview.name }}</p>
+            <p><strong>Kategori:</strong> {{ productToPreview.category || 'N/A' }}</p>
+            <p><strong>Harga:</strong> {{ formatRupiah(productToPreview.price) }}</p>
+            <p><strong>Status:</strong>
+              <span
+                :class="[
+                  'px-2 py-1 inline-flex text-sm leading-5 font-semibold rounded-full',
+                  productToPreview.status === 'active' ? 'bg-green-100 text-green-800' :
+                  productToPreview.status === 'pending_review' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                ]"
+              >
+                {{ formatStatus(productToPreview.status) }}
+              </span>
+            </p>
+            <p><strong>Dibuat Oleh:</strong> {{ productToPreview.created_by_user?.first_name || productToPreview.created_by_user?.username || 'Tidak Diketahui' }}</p>
+            <p class="text-sm">
+              <strong>Deskripsi:</strong> {{ productToPreview.description || 'Tidak ada deskripsi.' }}
+            </p>
+          </div>
+        </div>
+        <div v-else class="text-center text-gray-600 dark:text-gray-400">
+          Memuat detail produk...
+        </div>
+
+        <div class="flex justify-end mt-6">
+          <button
+            @click="closeProductPreviewModal"
+            class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+
   </AdminLayout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'; // Tambahkan 'watch'
+import { ref, computed, onMounted, watch } from 'vue';
 import { useProductStore } from '@/store/productStore';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
@@ -234,7 +289,7 @@ const productStore = useProductStore();
 
 const searchQuery = ref('');
 const selectedKategori = ref('');
-const selectedStatus = ref('all'); // Default tampilkan semua status
+const selectedStatus = ref('all');
 let debounceTimeout = null;
 
 const pageTitle = ref('Manajemen Produk');
@@ -244,25 +299,36 @@ const breadcrumbItems = ref([
 ]);
 
 const showDeleteConfirmModal = ref(false);
-const productToDeleteId = ref(null); // Ini akan tetap digunakan untuk hapus tunggal
+const productToDeleteId = ref(null);
 const productToDeleteName = ref('');
 
 const showEditStatusModal = ref(false);
 const productToEdit = ref(null);
 const newProductStatus = ref('');
 
-// --- Fitur Pilih Beberapa Produk ---
-const selectedProductIds = ref([]); // Array untuk menyimpan ID produk yang dipilih
-const selectAll = ref(false); // Status checkbox 'pilih semua'
+// --- Fitur Modal Preview Produk ---
+const showProductPreviewModal = ref(false);
+const productToPreview = ref(null);
 
-// Watcher untuk sinkronisasi selectAll dengan selectedProductIds
+const openProductPreviewModal = (product) => {
+  productToPreview.value = product;
+  showProductPreviewModal.value = true;
+};
+
+const closeProductPreviewModal = () => {
+  showProductPreviewModal.value = false;
+  productToPreview.value = null;
+};
+// --- Akhir Fitur Modal Preview Produk ---
+
+// --- Fitur Pilih Beberapa Produk ---
+const selectedProductIds = ref([]);
+const selectAll = ref(false);
+
 watch(productStore.products, (newProducts) => {
-  // Jika tidak ada produk, set selectAll ke false
   if (newProducts.length === 0) {
     selectAll.value = false;
   }
-  // Jika semua produk yang saat ini ditampilkan dipilih, set selectAll ke true
-  // Ini penting agar selectAll diperbarui ketika filter atau pencarian berubah
   selectAll.value = newProducts.every(product => selectedProductIds.value.includes(product.id));
 });
 
@@ -280,23 +346,20 @@ const deleteSelectedProducts = async () => {
     return;
   }
 
-  // Tampilkan modal konfirmasi untuk penghapusan massal
-  productToDeleteId.value = null; // Reset single delete ID
-  productToDeleteName.value = 'produk yang dipilih'; // Ubah pesan untuk penghapusan massal
+  productToDeleteId.value = null;
+  productToDeleteName.value = 'produk yang dipilih';
   showDeleteConfirmModal.value = true;
 };
 
 const confirmMassDelete = async () => {
   try {
-    // Anda perlu endpoint API baru di backend untuk menghapus banyak produk
-    // Asumsi ada aksi `deleteMultipleProducts` di productStore
-    const success = await productStore.deleteMultipleProducts(selectedProductIds.value);
+    const success = await productStore.deleteMultipleProducts(selectedProductIds.value); // Asumsi ada aksi ini di productStore
 
     if (success) {
       showToast(`${selectedProductIds.value.length} produk berhasil dihapus!`);
-      selectedProductIds.value = []; // Bersihkan pilihan setelah penghapusan
-      selectAll.value = false; // Reset pilih semua
-      fetchProducts(); // Refresh daftar produk
+      selectedProductIds.value = [];
+      selectAll.value = false;
+      fetchProducts();
     } else {
       showToast(`Gagal menghapus produk: ${productStore.error}`);
     }
@@ -304,13 +367,12 @@ const confirmMassDelete = async () => {
     console.error("Error during mass delete:", error);
     showToast("Terjadi kesalahan saat menghapus beberapa produk.");
   } finally {
-    cancelDeleteProduct(); // Tutup modal konfirmasi
+    cancelDeleteProduct();
   }
 };
 
-// Modifikasi fungsi deleteProduct untuk membedakan antara hapus tunggal dan massal
 const deleteProduct = async () => {
-  if (productToDeleteId.value) { // Hapus tunggal
+  if (productToDeleteId.value) {
     const success = await productStore.deleteProduct(productToDeleteId.value);
     if (success) {
       showToast('Produk berhasil dihapus!');
@@ -318,7 +380,7 @@ const deleteProduct = async () => {
       showToast(`Gagal menghapus produk: ${productStore.error}`);
     }
     cancelDeleteProduct();
-  } else if (selectedProductIds.value.length > 0) { // Hapus massal jika productToDeleteId kosong tapi ada produk yang dipilih
+  } else if (selectedProductIds.value.length > 0) {
     await confirmMassDelete();
   }
 };
@@ -355,7 +417,6 @@ const cancelDeleteProduct = () => {
   productToDeleteId.value = null;
   productToDeleteName.value = '';
 };
-
 
 const openEditProductStatusModal = (product) => {
   productToEdit.value = product;
@@ -400,3 +461,8 @@ onMounted(() => {
   fetchProducts();
 });
 </script>
+
+<style scoped>
+/* Anda bisa menambahkan gaya kustom di sini jika diperlukan */
+/* Misalnya, untuk backdrop-blur-md agar berfungsi, pastikan Anda memiliki Tailwind CSS JIT atau plugin backdrop */
+</style>

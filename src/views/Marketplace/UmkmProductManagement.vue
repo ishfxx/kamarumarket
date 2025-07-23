@@ -64,52 +64,93 @@
       </div>
     </div>
 
-    <div v-if="showProductModal" class="fixed inset-0 pt-[80px] md-blur dropset-blur-md backdrop-blur-sm overflow-y-auto h-full w-full flex items-start justify-center z-[99999]">
-      <div class="relative p-8 bg-white dark:bg-gray-800 w-full max-w-lg mx-auto rounded-lg shadow-lg">
-        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">{{ isEditMode ? 'Edit Produk' : 'Tambah Produk Baru' }}</h3>
-        <form @submit.prevent="saveProduct">
-          <div class="mb-4">
-            <label for="product-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Produk</label>
-            <input type="text" id="product-name" v-model="currentProduct.name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-          </div>
-          <div class="mb-4">
-            <label for="product-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Deskripsi</label>
-            <textarea id="product-description" v-model="currentProduct.description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
-          </div>
-          <div class="mb-4">
-            <label for="product-price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Harga</label>
-            <input type="number" id="product-price" v-model.number="currentProduct.price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-          </div>
-          <div class="mb-4">
-            <label for="product-category" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kategori</label>
-            <select id="product-category" v-model="currentProduct.category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-              <option value="">Pilih Kategori</option>
-              <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-            </select>
-          </div>
-          <div class="mb-4">
-            <label for="product-wa" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kontak WhatsApp</label>
-            <input type="text" id="product-wa" v-model="currentProduct.contact_wa" placeholder="Contoh: 6281234567890" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-          </div>
-          <div class="mb-6">
-            <label for="product-ecommerce" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Link E-commerce (opsional)</label>
-            <input type="url" id="product-ecommerce" v-model="currentProduct.ecommerce_link" placeholder="Contoh: https://shopee.co.id/produk-saya" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-          </div>
-                    <div class="mb-4">
-            <label for="product-image" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Gambar Produk</label>
-            <input type="file" id="product-image" @change="handleImageUpload" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-emerald-700 hover:file:bg-blue-100 dark:text-gray-400 dark:file:bg-blue-900 dark:file:text-blue-300 dark:hover:file:bg-blue-800">
-            <img v-if="currentProduct.image_url && !productImageFile" :src="currentProduct.image_url" alt="Gambar Produk Saat Ini" class="mt-2 w-24 h-24 object-cover rounded-md">
-            <p v-if="productImageFile" class="mt-2 text-sm text-gray-500 dark:text-gray-400">Gambar baru akan diunggah: {{ productImageFile.name }}</p>
-          </div>
-          <div class="flex justify-end space-x-3">
-            <button type="button" @click="closeProductModal" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-400 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700">Batal</button>
-            <button type="submit" :disabled="productStore.loading" class="px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed">
-              {{ productStore.loading ? 'Menyimpan...' : 'Simpan Produk' }}
-            </button>
-          </div>
-        </form>
+    <div v-if="showProductModal" class="fixed inset-0 z-[99999] flex items-start justify-center pt-20 overflow-y-auto backdrop-blur-sm">
+  <div class="relative w-full max-w-2xl p-6 mx-4 bg-white rounded-xl shadow-2xl dark:bg-gray-900">
+    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+      {{ isEditMode ? 'Edit Produk' : 'Tambah Produk Baru' }}
+    </h3>
+
+    <form @submit.prevent="saveProduct" class="space-y-5">
+      <!-- Nama Produk -->
+      <div>
+        <label for="product-name" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Produk</label>
+        <input type="text" id="product-name" v-model="currentProduct.name"
+          class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+          required>
       </div>
-    </div>
+
+      <!-- Deskripsi -->
+      <div>
+        <label for="product-description" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Deskripsi</label>
+        <textarea id="product-description" v-model="currentProduct.description" rows="3"
+          class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+      </div>
+
+      <!-- Harga -->
+      <div>
+        <label for="product-price" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Harga</label>
+        <input type="number" id="product-price" v-model.number="currentProduct.price"
+          class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+          required>
+      </div>
+
+      <!-- Kategori -->
+      <div>
+        <label for="product-category" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Kategori</label>
+        <select id="product-category" v-model="currentProduct.category"
+          class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+          required>
+          <option value="">Pilih Kategori</option>
+          <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+        </select>
+      </div>
+
+      <!-- WhatsApp -->
+      <div>
+        <label for="product-wa" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Kontak WhatsApp</label>
+        <input type="text" id="product-wa" v-model="currentProduct.contact_wa" placeholder="Contoh: 6281234567890"
+          class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+      </div>
+
+      <!-- E-commerce -->
+      <div>
+        <label for="product-ecommerce" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Link E-commerce (opsional)</label>
+        <input type="url" id="product-ecommerce" v-model="currentProduct.ecommerce_link"
+          placeholder="https://shopee.co.id/produk-saya"
+          class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+      </div>
+
+      <!-- Gambar Produk -->
+      <div>
+        <label for="product-image" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Gambar Produk</label>
+        <input type="file" id="product-image" @change="handleImageUpload" accept="image/*"
+          class="mt-1 w-full file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200 dark:file:bg-emerald-800 dark:file:text-white dark:hover:file:bg-emerald-700 text-sm text-gray-500 dark:text-gray-400" />
+
+        <!-- Preview -->
+        <div class="mt-3">
+          <img v-if="currentProduct.image_url && !productImageFile" :src="currentProduct.image_url"
+            alt="Gambar Produk" class="w-24 h-24 rounded-md object-cover border" />
+          <p v-if="productImageFile" class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Gambar baru akan diunggah: <strong>{{ productImageFile.name }}</strong>
+          </p>
+        </div>
+      </div>
+
+      <!-- Tombol -->
+      <div class="flex justify-end space-x-3 pt-4">
+        <button type="button" @click="closeProductModal"
+          class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+          Batal
+        </button>
+        <button type="submit" :disabled="productStore.loading"
+          class="px-5 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition">
+          {{ productStore.loading ? 'Menyimpan...' : 'Simpan Produk' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 
     <div v-if="showDeleteConfirmModal" class="fixed inset-0 pt-[80px] md-blur dropset-blur-md backdrop-blur-sm overflow-y-auto h-full w-full flex items-start justify-center z-[99999]">
       <div class="relative p-8 bg-white dark:bg-gray-800 w-full max-w-lg mx-auto rounded-lg shadow-lg">
