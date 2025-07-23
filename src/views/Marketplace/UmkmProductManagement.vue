@@ -1,55 +1,19 @@
 <template>
-  <!-- Modal Konfirmasi Hapus Produk -->
-<div
-  v-if="showDeleteConfirmModal"
-  class="fixed inset-0 z-[99999] flex items-center justify-center backdrop-blur-sm p-4"
->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
-    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Konfirmasi Hapus Produk</h3>
-    <p class="text-gray-700 dark:text-gray-300 mb-6">
-      Apakah Anda yakin ingin menghapus produk <b>{{ productToDeleteName }}</b>? Tindakan ini tidak dapat dibatalkan.
-    </p>
-    <div class="flex justify-end gap-3">
-      <button
-        @click="cancelDeleteProduct"
-        class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
-      >
-        Batal
-      </button>
-      <button
-        @click="deleteProduct"
-        class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-      >
-        Hapus
-      </button>
-    </div>
-  </div>
-</div>
-
   <AdminLayout>
     <Breadcrumb :pageTitle="pageTitle" :breadcrumbItems="breadcrumbItems" />
 
     <div class="px-6 py-8 dark:bg-gray-900 min-h-screen">
-      <div v-if="productStore.loading" class="text-center text-gray-600 dark:text-gray-400">
-        Memuat produk Anda...
-      </div>
-      <div v-if="productStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="showToast">
-        <strong class="font-bold">Error:</strong>
-        <span class="block sm:inline">{{ productStore.error }}</span>
-      </div>
-
       <div class="mb-6 flex justify-end">
         <button
           @click="openAddProductModal"
-          class="px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700"
+          class="px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-300 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-800"
         >
-          Tambah Produk Baru
+          + Tambah Produk Baru
         </button>
       </div>
-
       <div v-if="productStore.umkmProducts.length === 0 && !productStore.loading">
         <p class="text-center text-gray-500 dark:text-gray-400">Anda belum memiliki produk.</p>
-      </div>
+        </div>
 
       <div v-else class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
@@ -67,7 +31,7 @@
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-for="product in productStore.umkmProducts" :key="product.id">
+              <tr v-for="(product, index) in productStore.umkmProducts" :key="product.id ?? `umkm-${index}`">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <img :src="product.image_url || '/images/default-product.jpg'" :alt="product.name" class="w-16 h-16 object-cover rounded-md">
                 </td>
@@ -82,16 +46,16 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span :class="[
                     'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                    product.status === 'active' ? 'bg-green-100 text-green-800' :
-                    product.status === 'pending_review' ? 'bg-yellow-100 text-yellow-800' :
+                    product.status === ProductStatus.ACTIVE ? 'bg-green-100 text-green-800' :
+                    product.status === ProductStatus.PENDING_REVIEW ? 'bg-yellow-100 text-yellow-800' :
                     'bg-red-100 text-red-800'
                   ]">
-                    {{ formatStatus(product.status) }}
+                    {{ formatStatus(product.status ?? ProductStatus.INACTIVE) }}
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button @click="openEditProductModal(product)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-600 mr-3">Edit</button>
-                  <button @click="openDeleteConfirmModal(product.id, product.name)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-600">Hapus</button>
+                  <button @click="openDeleteConfirmModal(product.id, product.name ?? '')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-600">Hapus</button>
                 </td>
               </tr>
             </tbody>
@@ -105,40 +69,38 @@
         <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">{{ isEditMode ? 'Edit Produk' : 'Tambah Produk Baru' }}</h3>
         <form @submit.prevent="saveProduct">
           <div class="mb-4">
-            <label for="productName" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Nama Produk</label>
-            <input type="text" id="productName" v-model="currentProduct.name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <label for="product-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Produk</label>
+            <input type="text" id="product-name" v-model="currentProduct.name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
           </div>
           <div class="mb-4">
-            <label for="productDescription" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Deskripsi</label>
-            <textarea id="productDescription" v-model="currentProduct.description" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+            <label for="product-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Deskripsi</label>
+            <textarea id="product-description" v-model="currentProduct.description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
           </div>
           <div class="mb-4">
-            <label for="productPrice" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Harga (Rp)</label>
-            <input type="number" id="productPrice" v-model.number="currentProduct.price" required min="0" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <label for="product-price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Harga</label>
+            <input type="number" id="product-price" v-model.number="currentProduct.price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
           </div>
           <div class="mb-4">
-            <label for="productCategory" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Kategori</label>
-            <select id="productCategory" v-model="currentProduct.category" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-              <option value="" disabled>Pilih Kategori</option>
-              <option v-for="categoryOption in categories" :key="categoryOption" :value="categoryOption">{{ categoryOption }}</option>
+            <label for="product-category" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kategori</label>
+            <select id="product-category" v-model="currentProduct.category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+              <option value="">Pilih Kategori</option>
+              <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
             </select>
           </div>
           <div class="mb-4">
-            <label for="contactWa" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Kontak WhatsApp</label>
-            <input type="text" id="contactWa" v-model="currentProduct.contact_wa" placeholder="Contoh: 6281234567890" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <label for="product-wa" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kontak WhatsApp</label>
+            <input type="text" id="product-wa" v-model="currentProduct.contact_wa" placeholder="Contoh: 6281234567890" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
           </div>
           <div class="mb-6">
-            <label for="ecommerceLink" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Link E-commerce (Opsional)</label>
-            <input type="url" id="ecommerceLink" v-model="currentProduct.ecommerce_link" placeholder="Contoh: https://tokopedia.com/produk-saya" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <label for="product-ecommerce" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Link E-commerce (opsional)</label>
+            <input type="url" id="product-ecommerce" v-model="currentProduct.ecommerce_link" placeholder="Contoh: https://shopee.co.id/produk-saya" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
           </div>
-          <div class="mb-6">
-            <label for="productImage" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Gambar Produk</label>
-            <input type="file" id="productImage" accept="image/*" @change="handleImageUpload" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
-            <div v-if="currentProduct.image_url" class="mt-2">
-              <img :src="currentProduct.image_url" alt="Preview Produk" class="max-w-[150px] h-auto rounded-md shadow-md">
-            </div>
+                    <div class="mb-4">
+            <label for="product-image" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Gambar Produk</label>
+            <input type="file" id="product-image" @change="handleImageUpload" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-emerald-700 hover:file:bg-blue-100 dark:text-gray-400 dark:file:bg-blue-900 dark:file:text-blue-300 dark:hover:file:bg-blue-800">
+            <img v-if="currentProduct.image_url && !productImageFile" :src="currentProduct.image_url" alt="Gambar Produk Saat Ini" class="mt-2 w-24 h-24 object-cover rounded-md">
+            <p v-if="productImageFile" class="mt-2 text-sm text-gray-500 dark:text-gray-400">Gambar baru akan diunggah: {{ productImageFile.name }}</p>
           </div>
-
           <div class="flex justify-end space-x-3">
             <button type="button" @click="closeProductModal" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-400 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700">Batal</button>
             <button type="submit" :disabled="productStore.loading" class="px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -146,6 +108,19 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <div v-if="showDeleteConfirmModal" class="fixed inset-0 pt-[80px] md-blur dropset-blur-md backdrop-blur-sm overflow-y-auto h-full w-full flex items-start justify-center z-[99999]">
+      <div class="relative p-8 bg-white dark:bg-gray-800 w-full max-w-lg mx-auto rounded-lg shadow-lg">
+        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Konfirmasi Hapus Produk</h3>
+        <p class="text-gray-700 dark:text-gray-300 mb-6">Apakah Anda yakin ingin menghapus produk **{{ productToDeleteName }}**? Aksi ini tidak bisa dibatalkan.</p>
+        <div class="flex justify-end space-x-3">
+          <button type="button" @click="cancelDeleteProduct" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-400 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700">Batal</button>
+          <button type="button" @click="deleteProduct" :disabled="productStore.loading" class="px-5 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ productStore.loading ? 'Menghapus...' : 'Hapus' }}
+          </button>
+        </div>
       </div>
     </div>
   </AdminLayout>
@@ -160,6 +135,10 @@ import Breadcrumb from '@/components/common/PageBreadcrumb.vue';
 import { supabase } from '@/supabase';
 import { useRouter } from 'vue-router';
 import { useToast } from '@/composables/useToast';
+// ✅ Perbaikan: Impor ProductStatus sebagai tipe dan enum
+import type { Product, Store, User } from '@/types/index.d'; // or '@/types/index' if it's .ts
+import { ProductStatus } from '@/types/index.d'; // or '@/types/index' if it's .ts
+
 
 const { showToast } = useToast();
 const userStore = useUserStore();
@@ -174,17 +153,27 @@ const breadcrumbItems = ref([
 
 const showProductModal = ref(false);
 const isEditMode = ref(false);
-const currentProduct = ref({
-  id: null,
+
+const currentProduct = ref<Product>({
+  id: null, // ✅ Perbaikan: Awalnya bisa null untuk produk baru
   name: '',
   description: '',
   price: 0,
   category: '',
   image_url: '',
-  status: 'pending_review',
-  contact_wa: '', // NEW
-  ecommerce_link: '', // NEW
+  // ✅ Perbaikan: Gunakan anggota enum
+  status: ProductStatus.PENDING_REVIEW,
+  contact_wa: null, // ✅ Perbaikan: Gunakan null untuk tipe `string | null`
+  ecommerce_link: null, // ✅ Perbaikan: Gunakan null untuk tipe `string | null`
+  created_at: undefined, // ✅ Perbaikan: Biarkan undefined atau null, Supabase yang mengisi
+  created_by: undefined, // ✅ Perbaikan: Biarkan undefined, akan di-set oleh store action
+  store_id: null, // ✅ Perbaikan: Gunakan null untuk tipe `string | null`
+
+  // ✅ Perbaikan: Inisialisasi relasi sebagai null
+  created_by_user: null,
+  store: null
 });
+
 const productImageFile = ref<File | null>(null);
 
 const formatRupiah = (angka: number) => {
@@ -192,15 +181,20 @@ const formatRupiah = (angka: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
 };
 
-const formatStatus = (status: string) => {
-  if (!status) return '';
-  switch (status) {
-    case 'active': return 'Aktif';
-    case 'inactive': return 'Nonaktif';
-    case 'pending_review': return 'Menunggu Review';
-    default: return status;
+// ✅ Perbaikan: Parameter harus menerima ProductStatus atau string, dan penanganan yang benar
+const formatStatus = (status: ProductStatus | string) => {
+  if (typeof status === 'string') {
+    switch (status) {
+      case ProductStatus.ACTIVE: return 'Aktif';
+      case ProductStatus.INACTIVE: return 'Nonaktif';
+      case ProductStatus.PENDING_REVIEW: return 'Menunggu Review';
+      default: return status; // Mengembalikan string aslinya jika tidak cocok
+    }
   }
+  // Jika ini ProductStatus enum (object), langsung gunakan nilainya
+  return status; // Ini mungkin akan mengembalikan 'active' atau 'pending_review'
 };
+
 
 const categories = ref([
   'Elektronik',
@@ -224,21 +218,35 @@ const openAddProductModal = () => {
     price: 0,
     category: '',
     image_url: '',
-    status: 'pending_review',
-    contact_wa: '', // NEW
-    ecommerce_link: '', // NEW
+    // ✅ Perbaikan: Gunakan anggota enum
+    status: ProductStatus.PENDING_REVIEW,
+    contact_wa: null, // ✅ Perbaikan: Default ke null
+    ecommerce_link: null, // ✅ Perbaikan: Default ke null
+    created_at: undefined, // Biarkan undefined
+    created_by: userStore.user?.id, // Gunakan id user langsung
+    store_id: userStore.profile?.role === 'umkm' ? userStore.myStore?.id ?? null : null, // ✅ Perbaikan: Gunakan null
+    created_by_user: null,
+    store: null
   };
   productImageFile.value = null;
   showProductModal.value = true;
 };
 
-const openEditProductModal = (product: any) => {
+
+// ✅ Perbaikan: Tipe parameter 'product' harus Product
+const openEditProductModal = (product: Product) => {
   isEditMode.value = true;
   // Pastikan untuk menyalin contact_wa dan ecommerce_link dari produk yang ada
   currentProduct.value = {
     ...product,
-    contact_wa: product.contact_wa || '', // Pastikan tidak undefined
-    ecommerce_link: product.ecommerce_link || '', // Pastikan tidak undefined
+    // ✅ Perbaikan: Gunakan nullish coalescing untuk properti opsional
+    contact_wa: product.contact_wa ?? null,
+    ecommerce_link: product.ecommerce_link ?? null,
+    image_url: product.image_url ?? '',
+    status: product.status ?? ProductStatus.INACTIVE, // ✅ Perbaikan: Default status jika null/undefined
+    created_by_user: product.created_by_user ?? null,
+    store: product.store ?? null,
+    id: product.id ?? null, // Pastikan ID di-handle dengan benar
   };
   productImageFile.value = null;
   showProductModal.value = true;
@@ -264,8 +272,15 @@ const handleImageUpload = (event: Event) => {
 const uploadImage = async (file: File) => {
   if (!file) return null;
 
+  // ✅ Perbaikan: Pastikan user.id tersedia
+  if (!userStore.user?.id) {
+    productStore.error = 'User not logged in or ID not available for image upload.';
+    console.error('User ID not available for image upload.');
+    return null;
+  }
+
   const fileExtension = file.name.split('.').pop();
-  const filePath = `${userStore.user?.id}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExtension}`;
+  const filePath = `${userStore.user.id}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExtension}`;
 
   try {
     const { data, error } = await supabase.storage
@@ -301,20 +316,33 @@ const saveProduct = async () => {
     }
   }
 
-  const productDataToSave = {
+  // ✅ Perbaikan: Pastikan tipe productDataToSave adalah Partial<Product>
+  const productDataToSave: Partial<Product> = {
     name: currentProduct.value.name,
     description: currentProduct.value.description,
     price: currentProduct.value.price,
     category: currentProduct.value.category,
     image_url: imageUrl,
+    // ✅ Perbaikan: Gunakan ProductStatus dari enum
     status: currentProduct.value.status,
-    contact_wa: currentProduct.value.contact_wa || null, // NEW: Pastikan null jika kosong
-    ecommerce_link: currentProduct.value.ecommerce_link || null, // NEW: Pastikan null jika kosong
+    contact_wa: currentProduct.value.contact_wa,
+    ecommerce_link: currentProduct.value.ecommerce_link,
+    // created_by dan store_id akan di-set di productStore action (createProduct)
+    // Jika updateProduct memerlukan created_by/store_id secara eksplisit, tambahkan di sini
   };
+
 
   let success = false;
   if (isEditMode.value) {
-    success = await productStore.updateProduct(currentProduct.value.id, productDataToSave);
+    // ✅ Perbaikan: Pastikan ID tidak null sebelum memanggil updateProduct
+    if (currentProduct.value.id) {
+      success = await productStore.updateProduct(currentProduct.value.id, productDataToSave);
+    } else {
+      // Tangani kasus di mana ID produk null saat edit mode
+      productStore.error = 'ID produk tidak valid untuk pembaruan.';
+      showToast('Gagal memperbarui produk: ID tidak valid.', 'error');
+      success = false;
+    }
   } else {
     success = await productStore.createProduct(productDataToSave);
   }
@@ -322,31 +350,35 @@ const saveProduct = async () => {
   if (success) {
     showToast(`Produk berhasil di${isEditMode.value ? 'perbarui' : 'tambahkan'}!`);
     closeProductModal();
+    // ✅ Refresh data setelah berhasil
+    if (userStore.user?.id) {
+      await productStore.fetchUmkmProducts(userStore.user.id);
+    }
   } else {
     // Error sudah diset di store
+    showToast(`Gagal ${isEditMode.value ? 'memperbarui' : 'menambahkan'} produk: ${productStore.error}`, 'error');
   }
 };
 
-const confirmDeleteProduct = async (productId: string) => {
-  if (confirm('Apakah Anda yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan.')) {
-    const success = await productStore.deleteProduct(productId);
-    if (success) {
-      showToast('Produk berhasil dihapus!');
-    } else {
-      // Error sudah diset di store
-    }
-  }
-};
+// ✅ Fungsi `confirmDeleteProduct` tidak lagi diperlukan karena sudah menggunakan modal
+// Hapus atau komen fungsi ini
 
 const showDeleteConfirmModal = ref(false);
 const productToDeleteId = ref<string | null>(null);
 const productToDeleteName = ref('');
 
-const openDeleteConfirmModal = (id: string, name: string) => {
+// ✅ Perbaikan: Parameter id bisa `string | null`
+function openDeleteConfirmModal(id: string | null, name: string) {
+  if (!id) {
+    console.warn('Attempted to open delete confirmation for a product with null ID.');
+    showToast('Tidak dapat menghapus produk: ID tidak valid.', 'error');
+    return;
+  }
   productToDeleteId.value = id;
   productToDeleteName.value = name;
   showDeleteConfirmModal.value = true;
-};
+}
+
 
 const cancelDeleteProduct = () => {
   productToDeleteId.value = null;
@@ -355,14 +387,22 @@ const cancelDeleteProduct = () => {
 };
 
 const deleteProduct = async () => {
-  if (!productToDeleteId.value) return;
+  // ✅ Perbaikan: Pastikan productToDeleteId.value tidak null
+  if (!productToDeleteId.value) {
+    showToast('ID produk tidak valid untuk dihapus.', 'error');
+    return;
+  }
 
   const success = await productStore.deleteProduct(productToDeleteId.value);
   if (success) {
     showToast('Produk berhasil dihapus!');
     cancelDeleteProduct();
+    // ✅ Refresh data setelah berhasil
+    if (userStore.user?.id) {
+      await productStore.fetchUmkmProducts(userStore.user.id);
+    }
   } else {
-    showToast('Gagal menghapus produk.');
+    showToast('Gagal menghapus produk.', 'error'); // Tambahkan detail error jika tersedia
   }
 };
 
@@ -370,10 +410,11 @@ const deleteProduct = async () => {
 onMounted(async () => {
   await userStore.initializeUser();
 
-  if (userStore.isLoggedIn && (userStore.profile?.role === 'umkm' || userStore.profile?.role === 'admin')) {
+  // ✅ Perbaikan: Pastikan user.id tersedia sebelum memanggil fetchUmkmProducts
+  if (userStore.isLoggedIn && userStore.user?.id && (userStore.profile?.role === 'umkm' || userStore.profile?.role === 'admin')) {
     await productStore.fetchUmkmProducts(userStore.user.id);
   } else {
-    showToast('Anda tidak memiliki izin untuk mengakses halaman ini.');
+    showToast('Anda tidak memiliki izin untuk mengakses halaman ini.', 'error');
     router.push('/dashboard');
   }
 });
